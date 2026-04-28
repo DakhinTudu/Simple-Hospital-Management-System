@@ -16,7 +16,7 @@ $avgDailyBookings = count($publicTrend['bookings']) > 0 ? round($weeklyBookings 
     <link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans:300,400,500,600,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
-    <link rel="stylesheet" href="css/public-site.css">
+    <link rel="stylesheet" href="css/public-site.css?v=<?php echo time(); ?>">
 
     <style>
         .register-left img {
@@ -266,7 +266,7 @@ $avgDailyBookings = count($publicTrend['bookings']) > 0 ? round($weeklyBookings 
     </section>
 
     <!-- Analytics Section -->
-    <section class="public-section bg-transparent">
+    <section class="public-section" style="background-color: #f8fafc;">
         <div class="container">
             <div class="text-center mb-5">
                 <span class="section-subtitle">Real-time Insights</span>
