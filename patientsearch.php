@@ -8,13 +8,17 @@
 <body>
 <?php
 include("newfunc.php");
+include('include/security.php');
+hms_require_role('admin', 'index.php');
 if(isset($_POST['patient_search_submit']))
 {
-	$contact=$_POST['patient_contact'];
-	$query = "select * from patreg where contact= '$contact'";
-  $result = mysqli_query($con,$query);
+	$contact=hms_clean_input($_POST['patient_contact']);
+	$stmt = mysqli_prepare($con, "select fname,lname,email,contact from patreg where contact=? limit 1");
+  mysqli_stmt_bind_param($stmt, "s", $contact);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
   $row=mysqli_fetch_array($result);
-  if($row['lname']=="" & $row['email']=="" & $row['contact']=="" & $row['password']==""){
+  if(!$row){
     echo "<script> alert('No entries found! Please enter valid details'); 
           window.location.href = 'admin-panel1.php#list-doc';</script>";
   }
@@ -29,7 +33,6 @@ if(isset($_POST['patient_search_submit']))
       <th scope='col'>Last Name</th>
       <th scope='col'>Email</th>
       <th scope='col'>Contact</th>
-      <th scope='col'>Password</th>
     </tr>
   </thead>
   <tbody>";
@@ -39,13 +42,11 @@ if(isset($_POST['patient_search_submit']))
         $lname = $row['lname'];
         $email = $row['email'];
         $contact = $row['contact'];
-        $password = $row['password'];
         echo "<tr>
           <td>$fname</td>
           <td>$lname</td>
           <td>$email</td>
           <td>$contact</td>
-          <td>$password</td>
         </tr>";
     
 	echo "</tbody></table><center><a href='admin-panel1.php' class='btn btn-light'>Back to dashboard</a></div></center></div></div></div>";

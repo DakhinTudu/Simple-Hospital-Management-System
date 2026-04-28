@@ -1,44 +1,50 @@
 <?php
 session_start();
-$con=mysqli_connect("localhost","root","","myhmsdb");
+include('include/config.php');
+include('include/security.php');
 if(isset($_POST['patsub1'])){
-	$fname=$_POST['fname'];
-  $lname=$_POST['lname'];
-  $gender=$_POST['gender'];
-  $email=$_POST['email'];
-  $contact=$_POST['contact'];
-	$password=$_POST['password'];
-  $cpassword=$_POST['cpassword'];
+	$fname=hms_clean_input($_POST['fname']);
+  $lname=hms_clean_input($_POST['lname']);
+  $gender=hms_clean_input($_POST['gender']);
+  $email=hms_clean_input($_POST['email']);
+  $contact=hms_clean_input($_POST['contact']);
+	$password=hms_clean_input($_POST['password']);
+  $cpassword=hms_clean_input($_POST['cpassword']);
   if($password==$cpassword){
-  	$query="insert into patreg(fname,lname,gender,email,contact,password,cpassword) values ('$fname','$lname','$gender','$email','$contact','$password','$cpassword');";
-    $result=mysqli_query($con,$query);
-    if($result){
-        $_SESSION['username'] = $_POST['fname']." ".$_POST['lname'];
-        $_SESSION['fname'] = $_POST['fname'];
-        $_SESSION['lname'] = $_POST['lname'];
-        $_SESSION['gender'] = $_POST['gender'];
-        $_SESSION['contact'] = $_POST['contact'];
-        $_SESSION['email'] = $_POST['email'];
-        header("Location:admin-panel.php");
-    } 
-
-    $query1 = "select * from patreg;";
-    $result1 = mysqli_query($con,$query1);
-    if($result1){
-      $_SESSION['pid'] = $row['pid'];
+    if (!hms_is_valid_email($email)) {
+      header("Location:error1.php");
+      exit();
     }
-
+    $hashedPassword = hms_hash_password($password);
+    $stmt = mysqli_prepare($con, "insert into patreg(fname,lname,gender,email,contact,password,cpassword) values (?,?,?,?,?,?,?)");
+    mysqli_stmt_bind_param($stmt, "sssssss", $fname, $lname, $gender, $email, $contact, $hashedPassword, $hashedPassword);
+    $result=mysqli_stmt_execute($stmt);
+    if($result){
+        hms_login_user('patient', array(
+          'pid' => (int)mysqli_insert_id($con),
+          'username' => $fname." ".$lname,
+          'fname' => $fname,
+          'lname' => $lname,
+          'gender' => $gender,
+          'contact' => $contact,
+          'email' => $email
+        ));
+        header("Location:admin-panel.php");
+        exit();
+    } 
   }
   else{
     header("Location:error1.php");
+    exit();
   }
 }
 if(isset($_POST['update_data']))
 {
-	$contact=$_POST['contact'];
-	$status=$_POST['status'];
-	$query="update appointmenttb set payment='$status' where contact='$contact';";
-	$result=mysqli_query($con,$query);
+	$contact=hms_clean_input($_POST['contact']);
+	$status=hms_clean_input($_POST['status']);
+  $stmt = mysqli_prepare($con, "update appointmenttb set payment=? where contact=?");
+  mysqli_stmt_bind_param($stmt, "ss", $status, $contact);
+	$result=mysqli_stmt_execute($stmt);
 	if($result)
 		header("Location:updated.php");
 }
@@ -61,9 +67,10 @@ if(isset($_POST['update_data']))
 
 if(isset($_POST['doc_sub']))
 {
-	$name=$_POST['name'];
-	$query="insert into doctb(name)values('$name')";
-	$result=mysqli_query($con,$query);
+	$name=hms_clean_input($_POST['name']);
+  $stmt = mysqli_prepare($con, "insert into doctb(name) values(?)");
+  mysqli_stmt_bind_param($stmt, "s", $name);
+	$result=mysqli_stmt_execute($stmt);
 	if($result)
 		header("Location:adddoc.php");
 }

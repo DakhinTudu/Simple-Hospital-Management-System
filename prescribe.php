@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <?php
 include('func1.php');
+include('include/security.php');
+hms_require_role('doctor', 'index.php');
 $pid='';
 $ID='';
 $appdate='';
@@ -9,28 +11,30 @@ $fname = '';
 $lname= '';
 $doctor = $_SESSION['dname'];
 if(isset($_GET['pid']) && isset($_GET['ID']) && ($_GET['appdate']) && isset($_GET['apptime']) && isset($_GET['fname']) && isset($_GET['lname'])) {
-$pid = $_GET['pid'];
-  $ID = $_GET['ID'];
-  $fname = $_GET['fname'];
-  $lname = $_GET['lname'];
-  $appdate = $_GET['appdate'];
-  $apptime = $_GET['apptime'];
+$pid = (int)$_GET['pid'];
+  $ID = (int)$_GET['ID'];
+  $fname = hms_clean_input($_GET['fname']);
+  $lname = hms_clean_input($_GET['lname']);
+  $appdate = hms_clean_input($_GET['appdate']);
+  $apptime = hms_clean_input($_GET['apptime']);
 }
 
 
 
 if(isset($_POST['prescribe']) && isset($_POST['pid']) && isset($_POST['ID']) && isset($_POST['appdate']) && isset($_POST['apptime']) && isset($_POST['lname']) && isset($_POST['fname'])){
-  $appdate = $_POST['appdate'];
-  $apptime = $_POST['apptime'];
-  $disease = $_POST['disease'];
-  $allergy = $_POST['allergy'];
-  $fname = $_POST['fname'];
-  $lname = $_POST['lname'];
-  $pid = $_POST['pid'];
-  $ID = $_POST['ID'];
-  $prescription = $_POST['prescription'];
+  $appdate = hms_clean_input($_POST['appdate']);
+  $apptime = hms_clean_input($_POST['apptime']);
+  $disease = hms_clean_input($_POST['disease']);
+  $allergy = hms_clean_input($_POST['allergy']);
+  $fname = hms_clean_input($_POST['fname']);
+  $lname = hms_clean_input($_POST['lname']);
+  $pid = (int)$_POST['pid'];
+  $ID = (int)$_POST['ID'];
+  $prescription = hms_clean_input($_POST['prescription']);
   
-  $query=mysqli_query($con,"insert into prestb(doctor,pid,ID,fname,lname,appdate,apptime,disease,allergy,prescription) values ('$doctor','$pid','$ID','$fname','$lname','$appdate','$apptime','$disease','$allergy','$prescription')");
+  $stmt = mysqli_prepare($con, "insert into prestb(doctor,pid,ID,fname,lname,appdate,apptime,disease,allergy,prescription) values (?,?,?,?,?,?,?,?,?,?)");
+  mysqli_stmt_bind_param($stmt, "siisssssss", $doctor, $pid, $ID, $fname, $lname, $appdate, $apptime, $disease, $allergy, $prescription);
+  $query=mysqli_stmt_execute($stmt);
     if($query)
     {
       echo "<script>alert('Prescribed successfully!');</script>";

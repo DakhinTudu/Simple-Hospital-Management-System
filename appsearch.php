@@ -10,13 +10,17 @@
 <body>
 <?php
 include("newfunc.php");
+include('include/security.php');
+hms_require_role('admin', 'index.php');
 if(isset($_POST['app_search_submit']))
 {
-	$contact=$_POST['app_contact'];
-	$query = "select * from appointmenttb where contact= '$contact';";
-  $result = mysqli_query($con,$query);
+	$contact=hms_clean_input($_POST['app_contact']);
+	$stmt = mysqli_prepare($con, "select * from appointmenttb where contact=? limit 1");
+  mysqli_stmt_bind_param($stmt, "s", $contact);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
   $row=mysqli_fetch_array($result);
-  if($row['fname']=="" & $row['lname']=="" & $row['email']=="" & $row['contact']=="" & $row['doctor']=="" & $row['docFees']=="" & $row['appdate']=="" & $row['apptime']==""){
+  if(!$row){
     echo "<script> alert('No entries found! Please enter valid details'); 
           window.location.href = 'admin-panel1.php#list-doc';</script>";
   }

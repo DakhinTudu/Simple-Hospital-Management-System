@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <?php 
-$con=mysqli_connect("localhost","root","","myhmsdb");
+include('include/config.php');
+include('include/security.php');
+hms_require_role('admin', 'index.php');
 
 include('newfunc.php');
 
 if(isset($_POST['docsub']))
 {
-  $doctor=$_POST['doctor'];
-  $dpassword=$_POST['dpassword'];
-  $demail=$_POST['demail'];
-  $spec=$_POST['special'];
-  $docFees=$_POST['docFees'];
-  $query="insert into doctb(username,password,email,spec,docFees)values('$doctor','$dpassword','$demail','$spec','$docFees')";
-  $result=mysqli_query($con,$query);
+  $doctor=hms_clean_input($_POST['doctor']);
+  $dpassword=hms_clean_input($_POST['dpassword']);
+  $demail=hms_clean_input($_POST['demail']);
+  $spec=hms_clean_input($_POST['special']);
+  $docFees=hms_clean_input($_POST['docFees']);
+  $hashedPassword = hms_hash_password($dpassword);
+  $stmt = mysqli_prepare($con, "insert into doctb(username,password,email,spec,docFees) values(?,?,?,?,?)");
+  mysqli_stmt_bind_param($stmt, "sssss", $doctor, $hashedPassword, $demail, $spec, $docFees);
+  $result=mysqli_stmt_execute($stmt);
   if($result)
     {
       echo "<script>alert('Doctor added successfully!');</script>";
@@ -22,9 +26,10 @@ if(isset($_POST['docsub']))
 
 if(isset($_POST['docsub1']))
 {
-  $demail=$_POST['demail'];
-  $query="delete from doctb where email='$demail';";
-  $result=mysqli_query($con,$query);
+  $demail=hms_clean_input($_POST['demail']);
+  $stmt = mysqli_prepare($con, "delete from doctb where email=?");
+  mysqli_stmt_bind_param($stmt, "s", $demail);
+  $result=mysqli_stmt_execute($stmt);
   if($result)
     {
       echo "<script>alert('Doctor removed successfully!');</script>";
@@ -176,7 +181,7 @@ if(isset($_POST['docsub1']))
                       <h4 class="StepTitle" style="margin-top: 5%;">Patient List</h4>
                       
                       <p class="cl-effect-1">
-                        <a href="#app-hist" onclick="clickDiv('#list-pat-list')">
+                        <a href="#list-pat" onclick="clickDiv('#list-pat-list')">
                           View Patients
                         </a>
                       </p>
@@ -192,7 +197,7 @@ if(isset($_POST['docsub1']))
                       <h4 class="StepTitle" style="margin-top: 5%;">Appointment Details</h4>
                     
                       <p class="cl-effect-1">
-                        <a href="#app-hist" onclick="clickDiv('#list-app-list')">
+                        <a href="#list-app" onclick="clickDiv('#list-app-list')">
                           View Appointments
                         </a>
                       </p>
@@ -225,9 +230,9 @@ if(isset($_POST['docsub1']))
                       <h4 class="StepTitle" style="margin-top: 5%;">Manage Doctors</h4>
                     
                       <p class="cl-effect-1">
-                        <a href="#app-hist" onclick="clickDiv('#list-adoc-list')">Add Doctors</a>
+                        <a href="#list-settings" onclick="clickDiv('#list-adoc-list')">Add Doctors</a>
                         &nbsp|
-                        <a href="#app-hist" onclick="clickDiv('#list-ddoc-list')">
+                        <a href="#list-settings1" onclick="clickDiv('#list-ddoc-list')">
                           Delete Doctors
                         </a>
                       </p>
@@ -266,13 +271,11 @@ if(isset($_POST['docsub1']))
                     <th scope="col">Doctor Name</th>
                     <th scope="col">Specialization</th>
                     <th scope="col">Email</th>
-                    <th scope="col">Password</th>
                     <th scope="col">Fees</th>
                   </tr>
                 </thead>
                 <tbody>
                   <?php 
-                    $con=mysqli_connect("localhost","root","","myhmsdb");
                     global $con;
                     $query = "select * from doctb";
                     $result = mysqli_query($con,$query);
@@ -280,14 +283,12 @@ if(isset($_POST['docsub1']))
                       $username = $row['username'];
                       $spec = $row['spec'];
                       $email = $row['email'];
-                      $password = $row['password'];
                       $docFees = $row['docFees'];
                       
                       echo "<tr>
                         <td>$username</td>
                         <td>$spec</td>
                         <td>$email</td>
-                        <td>$password</td>
                         <td>$docFees</td>
                       </tr>";
                     }
@@ -318,12 +319,10 @@ if(isset($_POST['docsub1']))
                     <th scope="col">Gender</th>
                     <th scope="col">Email</th>
                     <th scope="col">Contact</th>
-                    <th scope="col">Password</th>
                   </tr>
                 </thead>
                 <tbody>
                   <?php 
-                    $con=mysqli_connect("localhost","root","","myhmsdb");
                     global $con;
                     $query = "select * from patreg";
                     $result = mysqli_query($con,$query);
@@ -334,7 +333,6 @@ if(isset($_POST['docsub1']))
                       $gender = $row['gender'];
                       $email = $row['email'];
                       $contact = $row['contact'];
-                      $password = $row['password'];
                       
                       echo "<tr>
                         <td>$pid</td>
@@ -343,7 +341,6 @@ if(isset($_POST['docsub1']))
                         <td>$gender</td>
                         <td>$email</td>
                         <td>$contact</td>
-                        <td>$password</td>
                       </tr>";
                     }
 
@@ -379,7 +376,6 @@ if(isset($_POST['docsub1']))
                 </thead>
                 <tbody>
                   <?php 
-                    $con=mysqli_connect("localhost","root","","myhmsdb");
                     global $con;
                     $query = "select * from prestb";
                     $result = mysqli_query($con,$query);
@@ -451,7 +447,6 @@ if(isset($_POST['docsub1']))
                 <tbody>
                   <?php 
 
-                    $con=mysqli_connect("localhost","root","","myhmsdb");
                     global $con;
 
                     $query = "select * from appointmenttb;";
@@ -561,7 +556,6 @@ if(isset($_POST['docsub1']))
                 <tbody>
                   <?php 
 
-                    $con=mysqli_connect("localhost","root","","myhmsdb");
                     global $con;
 
                     $query = "select * from contact;";

@@ -1,19 +1,28 @@
 <?php
 session_start();
-$con=mysqli_connect("localhost","root","","myhmsdb");
+include('include/config.php');
+include('include/security.php');
 if(isset($_POST['docsub1'])){
-	$dname=$_POST['username3'];
-	$dpass=$_POST['password3'];
-	$query="select * from doctb where username='$dname' and password='$dpass';";
-	$result=mysqli_query($con,$query);
-	if(mysqli_num_rows($result)==1)
+	$dname=hms_clean_input($_POST['username3']);
+	$dpass=hms_clean_input($_POST['password3']);
+  $stmt = mysqli_prepare($con, "select username,password from doctb where username=? limit 1");
+  mysqli_stmt_bind_param($stmt, "s", $dname);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
+	if($result && mysqli_num_rows($result)===1)
 	{
-    while($row=mysqli_fetch_array($result,MYSQLI_ASSOC)){
-    
-		      $_SESSION['dname']=$row['username'];
-      
+    $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
+    if (hms_verify_password($dpass, $row['password'])) {
+      if (!hms_is_password_hashed($row['password'])) {
+        $newHash = hms_hash_password($dpass);
+        $updateStmt = mysqli_prepare($con, "update doctb set password=? where username=?");
+        mysqli_stmt_bind_param($updateStmt, "ss", $newHash, $dname);
+        mysqli_stmt_execute($updateStmt);
+      }
+      hms_login_user('doctor', array('dname' => $row['username']));
+  		header("Location:doctor-panel.php");
+      exit();
     }
-		header("Location:doctor-panel.php");
 	}
 	else{
     // header("Location:error2.php");

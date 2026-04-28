@@ -1,11 +1,15 @@
 <?php
 session_start();
-$con=mysqli_connect("localhost","root","","myhmsdb");
+include('include/config.php');
+include('include/security.php');
+hms_require_role('doctor', 'index.php');
 if(isset($_POST['search_submit'])){
-  $contact=$_POST['contact'];
+  $contact=hms_clean_input($_POST['contact']);
   $docname = $_SESSION['dname'];
- $query="select * from appointmenttb where contact='$contact' and doctor='$docname';";
- $result=mysqli_query($con,$query);
+  $stmt = mysqli_prepare($con, "select * from appointmenttb where contact=? and doctor=?");
+  mysqli_stmt_bind_param($stmt, "ss", $contact, $docname);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
  echo '<!DOCTYPE html>
 <html lang="en">
   <head>

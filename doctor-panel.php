@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <?php 
 include('func1.php');
-$con=mysqli_connect("localhost","root","","myhmsdb");
+include('include/config.php');
+include('include/security.php');
+hms_require_role('doctor', 'index.php');
 $doctor = $_SESSION['dname'];
 if(isset($_GET['cancel']))
   {
-    $query=mysqli_query($con,"update appointmenttb set doctorStatus='0' where ID = '".$_GET['ID']."'");
+    $cancelId = (int)$_GET['ID'];
+    $stmt = mysqli_prepare($con, "update appointmenttb set doctorStatus='0' where ID=? and doctor=?");
+    mysqli_stmt_bind_param($stmt, "is", $cancelId, $doctor);
+    $query=mysqli_stmt_execute($stmt);
     if($query)
     {
       echo "<script>alert('Your appointment successfully cancelled');</script>";
@@ -179,11 +184,13 @@ if(isset($_GET['cancel']))
                 </thead>
                 <tbody>
                   <?php 
-                    $con=mysqli_connect("localhost","root","","myhmsdb");
                     global $con;
                     $dname = $_SESSION['dname'];
-                    $query = "select pid,ID,fname,lname,gender,email,contact,appdate,apptime,userStatus,doctorStatus from appointmenttb where doctor='$dname';";
-                    $result = mysqli_query($con,$query);
+                    $query = "select pid,ID,fname,lname,gender,email,contact,appdate,apptime,userStatus,doctorStatus from appointmenttb where doctor=?;";
+                    $stmt = mysqli_prepare($con, $query);
+                    mysqli_stmt_bind_param($stmt, "s", $dname);
+                    mysqli_stmt_execute($stmt);
+                    $result = mysqli_stmt_get_result($stmt);
                     while ($row = mysqli_fetch_array($result)){
                       ?>
                       <tr>
@@ -272,12 +279,13 @@ if(isset($_GET['cancel']))
                 <tbody>
                   <?php 
 
-                    $con=mysqli_connect("localhost","root","","myhmsdb");
                     global $con;
 
-                    $query = "select pid,fname,lname,ID,appdate,apptime,disease,allergy,prescription from prestb where doctor='$doctor';";
-                    
-                    $result = mysqli_query($con,$query);
+                    $query = "select pid,fname,lname,ID,appdate,apptime,disease,allergy,prescription from prestb where doctor=?;";
+                    $stmt = mysqli_prepare($con, $query);
+                    mysqli_stmt_bind_param($stmt, "s", $doctor);
+                    mysqli_stmt_execute($stmt);
+                    $result = mysqli_stmt_get_result($stmt);
                     if(!$result){
                       echo mysqli_error($con);
                     }
@@ -325,7 +333,6 @@ if(isset($_GET['cancel']))
                 <tbody>
                   <?php 
 
-                    $con=mysqli_connect("localhost","root","","myhmsdb");
                     global $con;
 
                     $query = "select * from appointmenttb;";

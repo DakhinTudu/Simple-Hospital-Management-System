@@ -1,15 +1,28 @@
 <?php
 session_start();
-$con=mysqli_connect("localhost","root","","myhmsdb");
+include('include/config.php');
+include('include/security.php');
 if(isset($_POST['adsub'])){
-	$username=$_POST['username1'];
-	$password=$_POST['password2'];
-	$query="select * from admintb where username='$username' and password='$password';";
-	$result=mysqli_query($con,$query);
-	if(mysqli_num_rows($result)==1)
+	$username=hms_clean_input($_POST['username1']);
+	$password=hms_clean_input($_POST['password2']);
+  $stmt = mysqli_prepare($con, "select username,password from admintb where username=? limit 1");
+  mysqli_stmt_bind_param($stmt, "s", $username);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
+	if($result && mysqli_num_rows($result)===1)
 	{
-		$_SESSION['username']=$username;
-		header("Location:admin-panel1.php");
+    $row = mysqli_fetch_assoc($result);
+    if (hms_verify_password($password, $row['password'])) {
+      if (!hms_is_password_hashed($row['password'])) {
+        $newHash = hms_hash_password($password);
+        $updateStmt = mysqli_prepare($con, "update admintb set password=? where username=?");
+        mysqli_stmt_bind_param($updateStmt, "ss", $newHash, $username);
+        mysqli_stmt_execute($updateStmt);
+      }
+  		hms_login_user('admin', array('username' => $username));
+  		header("Location:admin-panel1.php");
+      exit();
+    }
 	}
 	else
 		// header("Location:error2.php");
@@ -18,10 +31,11 @@ if(isset($_POST['adsub'])){
 }
 if(isset($_POST['update_data']))
 {
-	$contact=$_POST['contact'];
-	$status=$_POST['status'];
-	$query="update appointmenttb set payment='$status' where contact='$contact';";
-	$result=mysqli_query($con,$query);
+	$contact=hms_clean_input($_POST['contact']);
+	$status=hms_clean_input($_POST['status']);
+  $stmt = mysqli_prepare($con, "update appointmenttb set payment=? where contact=?");
+  mysqli_stmt_bind_param($stmt, "ss", $status, $contact);
+	$result=mysqli_stmt_execute($stmt);
 	if($result)
 		header("Location:updated.php");
 }
@@ -44,9 +58,10 @@ function display_docs()
 
 if(isset($_POST['doc_sub']))
 {
-	$name=$_POST['name'];
-	$query="insert into doctb(name)values('$name')";
-	$result=mysqli_query($con,$query);
+	$name=hms_clean_input($_POST['name']);
+  $stmt = mysqli_prepare($con, "insert into doctb(name) values(?)");
+  mysqli_stmt_bind_param($stmt, "s", $name);
+	$result=mysqli_stmt_execute($stmt);
 	if($result)
 		header("Location:adddoc.php");
 }

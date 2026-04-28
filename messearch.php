@@ -8,13 +8,17 @@
 <body>
 <?php
 include("newfunc.php");
+include('include/security.php');
+hms_require_role('admin', 'index.php');
 if(isset($_POST['mes_search_submit']))
 {
-	$contact=$_POST['mes_contact'];
-	$query = "select * from contact where contact= '$contact'";
-  $result = mysqli_query($con,$query);
+	$contact=hms_clean_input($_POST['mes_contact']);
+	$stmt = mysqli_prepare($con, "select * from contact where contact=? limit 1");
+  mysqli_stmt_bind_param($stmt, "s", $contact);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
   $row=mysqli_fetch_array($result);
-  if($row['name']=="" & $row['email']=="" & $row['contact']=="" & $row['message']==""){
+  if(!$row){
     echo "<script> alert('No entries found! Please enter valid details'); 
           window.location.href = 'admin-panel1.php#list-doc';</script>";
   } 
