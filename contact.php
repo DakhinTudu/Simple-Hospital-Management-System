@@ -1,14 +1,16 @@
 <?php 
 include('include/config.php');
+include('include/security.php');
 if(isset($_POST['btnSubmit']))
 {
-	$name = $_POST['txtName'];
-	$email = $_POST['txtEmail'];
-	$contact = $_POST['txtPhone'];
-	$message = $_POST['txtMsg'];
+	$name = hms_clean_input($_POST['txtName']);
+	$email = hms_clean_input($_POST['txtEmail']);
+	$contact = hms_clean_input($_POST['txtPhone']);
+	$message = hms_clean_input($_POST['txtMsg']);
 
-	$query="insert into contact(name,email,contact,message) values('$name','$email','$contact','$message');";
-	$result = mysqli_query($con,$query);
+	$stmt = mysqli_prepare($con, "insert into contact(name,email,contact,message) values(?,?,?,?)");
+	mysqli_stmt_bind_param($stmt, "ssss", $name, $email, $contact, $message);
+	$result = mysqli_stmt_execute($stmt);
 	
 	if($result)
     {
@@ -16,5 +18,12 @@ if(isset($_POST['btnSubmit']))
 		echo 'alert("Message sent successfully!");'; 
 		echo 'window.location.href = "contact.html";';
 		echo '</script>';
+    }
+    else
+    {
+      echo '<script type="text/javascript">'; 
+      echo 'alert("Unable to send your message. Please try again.");'; 
+      echo 'window.location.href = "contact.html";';
+      echo '</script>';
     }
 }

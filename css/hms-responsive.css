@@ -1,0 +1,185 @@
+/* Global responsive layer for HMS */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.table {
+  background: #fff;
+}
+
+@media (max-width: 1199.98px) {
+  #nav-tabContent {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .navbar-brand h4 {
+    font-size: 18px;
+  }
+
+  .container-fluid[style*="margin-top:50px"] .row > .col-md-4,
+  .container-fluid[style*="margin-top:50px"] .row > .col-md-8 {
+    max-width: 100% !important;
+    flex: 0 0 100%;
+  }
+
+  #list-tab {
+    margin-bottom: 14px;
+  }
+
+  .tab-content {
+    width: 100% !important;
+    overflow-x: auto;
+  }
+
+  .table {
+    min-width: 760px;
+  }
+
+  .register {
+    margin-top: 70px !important;
+    padding: 10px !important;
+  }
+
+  .register-left,
+  .register-right {
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+  }
+
+  .register-right {
+    border-top-left-radius: 18px !important;
+    border-bottom-left-radius: 18px !important;
+    padding-bottom: 16px;
+  }
+
+  .register .nav-tabs {
+    width: 100% !important;
+    float: none !important;
+    margin-top: 10px !important;
+  }
+
+  .register .register-form {
+    margin-top: 0 !important;
+    padding: 20px !important;
+  }
+
+  .btnRegister {
+    width: 100% !important;
+    float: none !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  body {
+    padding-top: 56px !important;
+  }
+
+  h3[style*="margin-left: 40%"] {
+    margin-left: 0 !important;
+    text-align: center;
+    font-size: 22px;
+  }
+
+  .panel-body {
+    padding: 14px;
+  }
+
+  .public-insights-wrap {
+    margin-top: 14px !important;
+  }
+
+  /* Mobile quick navigation for dashboard tabs */
+  #list-tab {
+    display: flex !important;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 0;
+    gap: 8px;
+    border-radius: 12px;
+    background: #fff;
+    position: sticky;
+    top: 56px;
+    z-index: 1000;
+  }
+
+  #list-tab .list-group-item {
+    flex: 0 0 auto;
+    border-radius: 999px !important;
+    border: 1px solid #d6e2f5;
+    font-size: 13px;
+    padding: 8px 14px;
+    white-space: nowrap;
+  }
+
+  #list-tab .list-group-item.active {
+    box-shadow: 0 6px 14px rgba(52, 42, 193, 0.25);
+  }
+
+  /* Table -> card rows on mobile */
+  .table.responsive-table {
+    min-width: 100% !important;
+    border: 0;
+  }
+
+  .table.responsive-table thead {
+    display: none;
+  }
+
+  .table.responsive-table tbody tr {
+    display: block;
+    margin-bottom: 12px;
+    border: 1px solid #e2ebf8;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 6px 16px rgba(15, 39, 64, 0.06);
+    padding: 6px 0;
+  }
+
+  .table.responsive-table tbody td {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    border: 0 !important;
+    padding: 8px 12px !important;
+    font-size: 13px;
+  }
+
+  .table.responsive-table tbody td::before {
+    content: attr(data-label);
+    color: #5f7d9d;
+    font-weight: 600;
+    min-width: 44%;
+    padding-right: 8px;
+  }
+
+  .table.responsive-table tbody td > * {
+    margin-left: auto;
+    text-align: right;
+  }
+}
+
+@media (max-width: 399.98px) {
+  .navbar-brand h4 {
+    font-size: 16px;
+  }
+
+  .register-heading {
+    font-size: 22px !important;
+  }
+
+  .register .register-form {
+    padding: 14px !important;
+  }
+
+  .table.responsive-table tbody td {
+    font-size: 12px;
+    padding: 7px 10px !important;
+  }
+}

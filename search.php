@@ -9,58 +9,77 @@ if(isset($_POST['search_submit'])){
   $stmt = mysqli_prepare($con, "select * from appointmenttb where contact=? and doctor=?");
   mysqli_stmt_bind_param($stmt, "ss", $contact, $docname);
   mysqli_stmt_execute($stmt);
-  $result = mysqli_stmt_get_result($stmt);
- echo '<!DOCTYPE html>
+  $doctor = $_SESSION['dname'];
+  echo '<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <!-- Required meta tags -->
+<head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results | Global Hospitals</title>
+    <link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans:300,400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="css/public-site.css">
+    <link rel="stylesheet" href="css/app-dashboard.css">
+</head>
+<body class="dashboard-body">
+    <?php 
+      include("include/app-header.php");
+      include("include/app-sidebar.php");
+      render_app_header($doctor);
+      render_app_sidebar("app", "doctor");
+    ?>
+    <main class="dashboard-content">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-5">
+                <div>
+                    <h2 class="font-weight-bold mb-1">Search Results</h2>
+                    <p class="text-muted mb-0">Found matching records for contact: '.$contact.'</p>
+                </div>
+                <div class="text-right">
+                    <a href="doctor-dashboard.php" class="btn btn-outline-primary rounded-pill px-4">
+                        <i class="fa fa-arrow-left mr-2"></i> Back to Panel
+                    </a>
+                </div>
+            </div>
 
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
-  </head>
-  <body style="background-color:#342ac1;color:white;text-align:center;padding-top:50px;">
-  <div class="container" style="text-align:left;">
-  <center><h3>Search Results</h3></center><br>
-  <table class="table table-hover">
-  <thead>
-    <tr>
-      <th>First Name</th>
-      <th>Last Name</th>
-      <th>Email</th>
-      <th>Contact</th>
-      <th>Appointment Date</th>
-      <th>Appointment Time</th>
-    </tr>
-  </thead>
-  <tbody>
-  ';
+            <div class="table-modern p-4">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Email</th>
+                            <th>Contact</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
   while($row=mysqli_fetch_array($result)){
-    $fname=$row['fname'];
-    $lname=$row['lname'];
-    $email=$row['email'];
-    $contact=$row['contact'];
-    $appdate=$row['appdate'];
-    $apptime=$row['apptime'];
     echo '<tr>
-      <td>'.$fname.'</td>
-      <td>'.$lname.'</td>
-      <td>'.$email.'</td>
-      <td>'.$contact.'</td>
-      <td>'.$appdate.'</td>
-      <td>'.$apptime.'</td>
-    </tr>';
+            <td>'.$row['fname'].'</td>
+            <td>'.$row['lname'].'</td>
+            <td>'.$row['email'].'</td>
+            <td>'.$row['contact'].'</td>
+            <td>'.$row['appdate'].'</td>
+            <td>'.$row['apptime'].'</td>
+          </tr>';
   }
-echo '</tbody></table></div> 
-<div><a href="doctor-panel.php" class="btn btn-light">Go Back</a></div>
-<!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
-  </body>
+  echo '            </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script>
+      document.getElementById("sidebarToggle")?.addEventListener("click", function() {
+        document.querySelector(".app-sidebar").classList.toggle("show");
+      });
+    </script>
+</body>
 </html>';
 }
-
 ?>

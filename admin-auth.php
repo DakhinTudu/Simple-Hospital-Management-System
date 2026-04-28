@@ -20,7 +20,7 @@ if(isset($_POST['adsub'])){
         mysqli_stmt_execute($updateStmt);
       }
   		hms_login_user('admin', array('username' => $username));
-  		header("Location:admin-panel1.php");
+  		header("Location: admin-dashboard.php");
       exit();
     }
 	}
@@ -31,6 +31,7 @@ if(isset($_POST['adsub'])){
 }
 if(isset($_POST['update_data']))
 {
+  hms_require_role('admin', 'index.php');
 	$contact=hms_clean_input($_POST['contact']);
 	$status=hms_clean_input($_POST['status']);
   $stmt = mysqli_prepare($con, "update appointmenttb set payment=? where contact=?");
@@ -58,6 +59,7 @@ function display_docs()
 
 if(isset($_POST['doc_sub']))
 {
+  hms_require_role('admin', 'index.php');
 	$name=hms_clean_input($_POST['name']);
   $stmt = mysqli_prepare($con, "insert into doctb(name) values(?)");
   mysqli_stmt_bind_param($stmt, "s", $name);

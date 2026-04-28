@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <?php
-include('func1.php');
+include('doctor-auth.php');
 include('include/security.php');
 hms_require_role('doctor', 'index.php');
 $pid='';
@@ -31,12 +31,28 @@ if(isset($_POST['prescribe']) && isset($_POST['pid']) && isset($_POST['ID']) && 
   $pid = (int)$_POST['pid'];
   $ID = (int)$_POST['ID'];
   $prescription = hms_clean_input($_POST['prescription']);
+  $medicineName = isset($_POST['medicine_name']) ? hms_clean_input($_POST['medicine_name']) : '';
+  $dosage = isset($_POST['dosage']) ? hms_clean_input($_POST['dosage']) : '';
+  $duration = isset($_POST['duration']) ? hms_clean_input($_POST['duration']) : '';
+  $instructions = isset($_POST['instructions']) ? hms_clean_input($_POST['instructions']) : '';
   
   $stmt = mysqli_prepare($con, "insert into prestb(doctor,pid,ID,fname,lname,appdate,apptime,disease,allergy,prescription) values (?,?,?,?,?,?,?,?,?,?)");
   mysqli_stmt_bind_param($stmt, "siisssssss", $doctor, $pid, $ID, $fname, $lname, $appdate, $apptime, $disease, $allergy, $prescription);
   $query=mysqli_stmt_execute($stmt);
+  if ($query && $medicineName !== '' && $dosage !== '' && $duration !== '') {
+    $createdAt = date('Y-m-d H:i:s');
+    $eStmt = mysqli_prepare($con, "insert into eprescriptiontb(appointment_id,patient_id,doctor,medicine_name,dosage,duration,instructions,created_at) values (?,?,?,?,?,?,?,?)");
+    if ($eStmt) {
+      mysqli_stmt_bind_param($eStmt, "iissssss", $ID, $pid, $doctor, $medicineName, $dosage, $duration, $instructions, $createdAt);
+      mysqli_stmt_execute($eStmt);
+    }
+  }
     if($query)
     {
+      hms_audit_log($con, 'prescription.created', 'appointment', (string)$ID, array(
+        'patient_id' => $pid,
+        'doctor' => $doctor
+      ));
       echo "<script>alert('Prescribed successfully!');</script>";
     }
     else{
@@ -50,77 +66,42 @@ if(isset($_POST['prescribe']) && isset($_POST['pid']) && isset($_POST['ID']) && 
 
 ?>
 
-<html lang="en">
-  <head>
+    <link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans:300,400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="css/public-site.css">
+    <link rel="stylesheet" href="css/app-dashboard.css">
+  </head>
+  <body class="dashboard-body">
+    <?php 
+      include('include/app-header.php');
+      include('include/app-sidebar.php');
+      render_app_header($doctor);
+      render_app_sidebar('app', 'doctor');
+    ?>
 
+    <main class="dashboard-content">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-5">
+                <div>
+                    <h2 class="font-weight-bold mb-1">Create Prescription</h2>
+                    <p class="text-muted mb-0">Patient: <?php echo $fname.' '.$lname; ?> | ID: <?php echo $pid; ?></p>
+                </div>
+                <div class="text-right d-flex align-items-center">
+                    <a href="doctor-dashboard.php" class="btn btn-outline-primary rounded-pill px-4 mr-2">
+                        <i class="fa fa-arrow-left mr-2"></i> Back to Panel
+                    </a>
+                </div>
+            </div>
 
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <link rel="shortcut icon" type="image/x-icon" href="images/favicon.png" />
-    <meta name="viewport" content="width=device-width, -scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" type="text/css" href="font-awesome-4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="style.css">
-    <!-- Bootstrap CSS -->
-    
-        <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
-
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
-
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    
-    <link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans&display=swap" rel="stylesheet">
-      <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
-  <a class="navbar-brand" href="#"><i class="fa fa-user-plus" aria-hidden="true"></i> Global Hospital </a>
-  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
-  </button>
-
-  <style >
-    .bg-primary {
-    background: -webkit-linear-gradient(left, #3931af, #00c6ff);
-}
-.list-group-item.active {
-    z-index: 2;
-    color: #fff;
-    background-color: #342ac1;
-    border-color: #007bff;
-}
-.text-primary {
-    color: #342ac1!important;
-}
-
-.btn-primary{
-  background-color: #3c50c1;
-  border-color: #3c50c1;
-}
-  </style>
-
-<div class="collapse navbar-collapse" id="navbarSupportedContent">
-     <ul class="navbar-nav mr-auto">
-       <li class="nav-item">
-        <a class="nav-link" href="logout1.php"><i class="fa fa-sign-out" aria-hidden="true"></i>Logout</a>
-        
-      </li>
-       <li class="nav-item">
-       <a class="nav-link" href="doctor-panel.php"><i class="fa fa-sign-out" aria-hidden="true"></i>Back</a>
-      </li>
-    </ul>
-  </div>
-</nav>
-
-</head>
-  <style type="text/css">
-    button:hover{cursor:pointer;}
-    #inputbtn:hover{cursor:pointer;}
-  </style>
-
-<body style="padding-top:50px;">
+            <div class="public-card p-5 border-0 shadow-sm">
    <div class="container-fluid" style="margin-top:50px;">
     <h3 style = "margin-left: 40%;  padding-bottom: 20px; font-family: 'IBM Plex Sans', sans-serif;"> Welcome &nbsp<?php echo $doctor ?>
    </h3>
 
    <div class="tab-pane" id="list-pres" role="tabpanel" aria-labelledby="list-pres-list">
         <form class="form-group" name="prescribeform" method="post" action="prescribe.php">
+          <?php echo hms_csrf_field(); ?>
         
           <div class="row">
                   <div class="col-md-4"><label>Disease:</label></div>
@@ -139,6 +120,14 @@ if(isset($_POST['prescribe']) && isset($_POST['pid']) && isset($_POST['ID']) && 
                   <!-- <input type="text" class="form-control"  name="prescription"  required> -->
                   <textarea id="prescription" cols="86" rows ="10" name="prescription" required></textarea>
                   </div><br><br><br>
+                  <div class="col-md-4"><label>Medicine Name:</label></div>
+                  <div class="col-md-8"><input type="text" class="form-control" name="medicine_name" required></div><br><br><br>
+                  <div class="col-md-4"><label>Dosage:</label></div>
+                  <div class="col-md-8"><input type="text" class="form-control" name="dosage" placeholder="e.g. 1 tablet after meal" required></div><br><br><br>
+                  <div class="col-md-4"><label>Duration:</label></div>
+                  <div class="col-md-8"><input type="text" class="form-control" name="duration" placeholder="e.g. 5 days" required></div><br><br><br>
+                  <div class="col-md-4"><label>Instructions:</label></div>
+                  <div class="col-md-8"><textarea cols="86" rows="4" name="instructions"></textarea></div><br><br><br>
                   <input type="hidden" name="fname" value="<?php echo $fname ?>" />
                   <input type="hidden" name="lname" value="<?php echo $lname ?>" />
                   <input type="hidden" name="appdate" value="<?php echo $appdate ?>" />
@@ -150,9 +139,15 @@ if(isset($_POST['prescribe']) && isset($_POST['pid']) && isset($_POST['ID']) && 
           
         </form>
         <br>
-        
       </div>
-      </div>
+    </main>
       
 
-  
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+  </body>
+</html>
+

@@ -10,7 +10,7 @@ include('include/config.php');
 //  {
 //   $_SESSION['username']=$username;
 //   $_SESSION['pid']=
-//   header("Location:admin-panel.php");
+//   header("Location: patient-dashboard.php");
 //  }
 //  else
 //   header("Location:error.php");

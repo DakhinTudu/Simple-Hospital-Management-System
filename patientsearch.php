@@ -1,15 +1,27 @@
-<!DOCTYPE html>
- <?php #include("func.php");?>
-<html>
-<head>
-	<title>Patient Details</title>
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
-</head>
-<body>
 <?php
-include("newfunc.php");
+include("core-functions.php");
 include('include/security.php');
 hms_require_role('admin', 'index.php');
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Details | Global Hospitals</title>
+    <link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans:300,400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="css/public-site.css">
+    <link rel="stylesheet" href="css/app-dashboard.css">
+</head>
+<body class="dashboard-body">
+<?php
+include('include/app-header.php');
+include('include/app-sidebar.php');
+render_app_header('Staff Administrator');
+render_app_sidebar('pat', 'admin');
+
 if(isset($_POST['patient_search_submit']))
 {
 	$contact=hms_clean_input($_POST['patient_contact']);
@@ -20,42 +32,56 @@ if(isset($_POST['patient_search_submit']))
   $row=mysqli_fetch_array($result);
   if(!$row){
     echo "<script> alert('No entries found! Please enter valid details'); 
-          window.location.href = 'admin-panel1.php#list-doc';</script>";
+          window.location.href = 'admin-dashboard.php#list-doc';</script>";
   }
   else {
-    echo "<div class='container-fluid' style='margin-top:50px;'>
-	<div class='card'>
-	<div class='card-body' style='background-color:#342ac1;color:#ffffff;'>
-<table class='table table-hover'>
-  <thead>
-    <tr>
-      <th scope='col'>First Name</th>
-      <th scope='col'>Last Name</th>
-      <th scope='col'>Email</th>
-      <th scope='col'>Contact</th>
-    </tr>
-  </thead>
-  <tbody>";
+    echo "
+    <main class='dashboard-content'>
+        <div class='container-fluid'>
+            <div class='d-flex justify-content-between align-items-center mb-5'>
+                <div>
+                    <h2 class='font-weight-bold mb-1'>Patient Search Result</h2>
+                    <p class='text-muted mb-0'>Details for contact: $contact</p>
+                </div>
+                <div class='text-right'>
+                    <a href='admin-dashboard.php' class='btn btn-outline-primary rounded-pill px-4'>
+                        <i class='fa fa-arrow-left mr-2'></i> Back to Panel
+                    </a>
+                </div>
+            </div>
 
-	
-		    $fname = $row['fname'];
-        $lname = $row['lname'];
-        $email = $row['email'];
-        $contact = $row['contact'];
-        echo "<tr>
-          <td>$fname</td>
-          <td>$lname</td>
-          <td>$email</td>
-          <td>$contact</td>
-        </tr>";
-    
-	echo "</tbody></table><center><a href='admin-panel1.php' class='btn btn-light'>Back to dashboard</a></div></center></div></div></div>";
-}
+            <div class='table-modern p-4'>
+                <table class='table table-hover mb-0'>
+                    <thead>
+                        <tr>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Email</th>
+                            <th>Contact</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>".$row['fname']."</td>
+                            <td>".$row['lname']."</td>
+                            <td>".$row['email']."</td>
+                            <td>".$row['contact']."</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>";
   }
-	
+}
 ?>
-<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script> 
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script>
+      document.getElementById('sidebarToggle')?.addEventListener('click', function() {
+        document.querySelector('.app-sidebar').classList.toggle('show');
+      });
+    </script>
 </body>
 </html>

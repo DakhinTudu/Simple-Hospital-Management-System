@@ -2,78 +2,72 @@
 session_start();
 include('include/config.php');
 include('include/security.php');
-if(isset($_POST['patsub1'])){
-	$fname=hms_clean_input($_POST['fname']);
-  $lname=hms_clean_input($_POST['lname']);
-  $gender=hms_clean_input($_POST['gender']);
-  $email=hms_clean_input($_POST['email']);
-  $contact=hms_clean_input($_POST['contact']);
-	$password=hms_clean_input($_POST['password']);
-  $cpassword=hms_clean_input($_POST['cpassword']);
-  if($password==$cpassword){
-    if (!hms_is_valid_email($email)) {
-      header("Location:error1.php");
+if(isset($_POST['docsub1'])){
+	$dname=hms_clean_input($_POST['username3']);
+	$dpass=hms_clean_input($_POST['password3']);
+  $stmt = mysqli_prepare($con, "select username,password from doctb where username=? limit 1");
+  mysqli_stmt_bind_param($stmt, "s", $dname);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
+	if($result && mysqli_num_rows($result)===1)
+	{
+    $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
+    if (hms_verify_password($dpass, $row['password'])) {
+      if (!hms_is_password_hashed($row['password'])) {
+        $newHash = hms_hash_password($dpass);
+        $updateStmt = mysqli_prepare($con, "update doctb set password=? where username=?");
+        mysqli_stmt_bind_param($updateStmt, "ss", $newHash, $dname);
+        mysqli_stmt_execute($updateStmt);
+      }
+      hms_login_user('doctor', array('dname' => $row['username']));
+  		header("Location: doctor-dashboard.php");
       exit();
     }
-    $hashedPassword = hms_hash_password($password);
-    $stmt = mysqli_prepare($con, "insert into patreg(fname,lname,gender,email,contact,password,cpassword) values (?,?,?,?,?,?,?)");
-    mysqli_stmt_bind_param($stmt, "sssssss", $fname, $lname, $gender, $email, $contact, $hashedPassword, $hashedPassword);
-    $result=mysqli_stmt_execute($stmt);
-    if($result){
-        hms_login_user('patient', array(
-          'pid' => (int)mysqli_insert_id($con),
-          'username' => $fname." ".$lname,
-          'fname' => $fname,
-          'lname' => $lname,
-          'gender' => $gender,
-          'contact' => $contact,
-          'email' => $email
-        ));
-        header("Location:admin-panel.php");
-        exit();
-    } 
-  }
-  else{
-    header("Location:error1.php");
-    exit();
+	}
+	else{
+    // header("Location:error2.php");
+    echo("<script>alert('Invalid Username or Password. Try Again!');
+          window.location.href = 'index.php';</script>");
   }
 }
-if(isset($_POST['update_data']))
+
+
+// if(isset($_POST['update_data']))  
+//   $result=mysqli_query($con,$query);
+//   if(mysqli_num_rows($result)==1)
+//   {
+//     $_SESSION['username']=$username;
+//     header("Location:admin-panel.php");
+//   }
+//   else
+//     header("Location:error2.php");
+  
+
+
+
+function display_docs()
 {
-	$contact=hms_clean_input($_POST['contact']);
-	$status=hms_clean_input($_POST['status']);
-  $stmt = mysqli_prepare($con, "update appointmenttb set payment=? where contact=?");
-  mysqli_stmt_bind_param($stmt, "ss", $status, $contact);
-	$result=mysqli_stmt_execute($stmt);
-	if($result)
-		header("Location:updated.php");
+	global $con;
+	$query="select * from doctb";
+	$result=mysqli_query($con,$query);
+	while($row=mysqli_fetch_array($result))
+	{
+		$name=$row['name'];
+		# echo'<option value="" disabled selected>Select Doctor</option>';
+		echo '<option value="'.$name.'">'.$name.'</option>';
+	}
 }
 
-
-
-
-// function display_docs()
+// if(isset($_POST['doc_sub']))
 // {
-// 	global $con;
-// 	$query="select * from doctb";
+// 	$name=$_POST['name'];
+// 	$query="insert into doctb(name)values('$name')";
 // 	$result=mysqli_query($con,$query);
-// 	while($row=mysqli_fetch_array($result))
-// 	{
-// 		$name=$row['name'];
-// 		# echo'<option value="" disabled selected>Select Doctor</option>';
-// 		echo '<option value="'.$name.'">'.$name.'</option>';
-// 	}
+// 	if($result)
+// 		header("Location:adddoc.php");
 // }
 
-if(isset($_POST['doc_sub']))
-{
-	$name=hms_clean_input($_POST['name']);
-  $stmt = mysqli_prepare($con, "insert into doctb(name) values(?)");
-  mysqli_stmt_bind_param($stmt, "s", $name);
-	$result=mysqli_stmt_execute($stmt);
-	if($result)
-		header("Location:adddoc.php");
-}
+
 function display_admin_panel(){
 	echo '<!DOCTYPE html>
 <html lang="en">
@@ -90,8 +84,7 @@ function display_admin_panel(){
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
-
-  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+<div class="collapse navbar-collapse" id="navbarSupportedContent">
      <ul class="navbar-nav mr-auto">
        <li class="nav-item">
         <a class="nav-link" href="logout.php"><i class="fa fa-sign-out" aria-hidden="true"></i>Logout</a>
