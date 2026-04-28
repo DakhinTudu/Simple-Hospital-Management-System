@@ -12,6 +12,11 @@
     --card-shadow: 0 10px 24px rgba(16, 39, 66, 0.08);
 }
 
+html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+}
+
 .dashboard-body {
     background-color: var(--light-bg);
     color: var(--text-main);

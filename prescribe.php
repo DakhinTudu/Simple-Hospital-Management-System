@@ -65,13 +65,17 @@ if(isset($_POST['prescribe']) && isset($_POST['pid']) && isset($_POST['ID']) && 
 }
 
 ?>
-
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Prescription | Global Hospitals</title>
     <link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans:300,400,500,600,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="css/public-site.css">
     <link rel="stylesheet" href="css/app-dashboard.css">
-  </head>
+</head>
   <body class="dashboard-body">
     <?php 
       include('include/app-header.php');
@@ -107,18 +111,16 @@ if(isset($_POST['prescribe']) && isset($_POST['pid']) && isset($_POST['ID']) && 
                   <div class="col-md-4"><label>Disease:</label></div>
                   <div class="col-md-8">
                   <!-- <input type="text" class="form-control" name="disease" required> -->
-                  <textarea id="disease" cols="86" rows ="5" name="disease" required></textarea>
+                  <textarea id="disease" class="form-control" rows ="5" name="disease" required></textarea>
                   </div><br><br><br>
                   
                   <div class="col-md-4"><label>Allergies:</label></div>
                   <div class="col-md-8">
-                  <!-- <input type="text"  class="form-control" name="allergy" required> -->
-                  <textarea id="allergy" cols="86" rows ="5" name="allergy" required></textarea>
+                  <textarea id="allergy" class="form-control" rows ="5" name="allergy" required></textarea>
                   </div><br><br><br>
                   <div class="col-md-4"><label>Prescription:</label></div>
                   <div class="col-md-8">
-                  <!-- <input type="text" class="form-control"  name="prescription"  required> -->
-                  <textarea id="prescription" cols="86" rows ="10" name="prescription" required></textarea>
+                  <textarea id="prescription" class="form-control" rows ="10" name="prescription" required></textarea>
                   </div><br><br><br>
                   <div class="col-md-4"><label>Medicine Name:</label></div>
                   <div class="col-md-8"><input type="text" class="form-control" name="medicine_name" required></div><br><br><br>
@@ -127,7 +129,7 @@ if(isset($_POST['prescribe']) && isset($_POST['pid']) && isset($_POST['ID']) && 
                   <div class="col-md-4"><label>Duration:</label></div>
                   <div class="col-md-8"><input type="text" class="form-control" name="duration" placeholder="e.g. 5 days" required></div><br><br><br>
                   <div class="col-md-4"><label>Instructions:</label></div>
-                  <div class="col-md-8"><textarea cols="86" rows="4" name="instructions"></textarea></div><br><br><br>
+                  <div class="col-md-8"><textarea class="form-control" rows="4" name="instructions"></textarea></div><br><br><br>
                   <input type="hidden" name="fname" value="<?php echo $fname ?>" />
                   <input type="hidden" name="lname" value="<?php echo $lname ?>" />
                   <input type="hidden" name="appdate" value="<?php echo $appdate ?>" />

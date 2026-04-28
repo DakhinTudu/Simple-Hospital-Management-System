@@ -1,9 +1,6 @@
 <?php
 // Update these values for your local MySQL setup.
-$dbServer = 'localhost';
-$dbUser = 'root';
-$dbPass = 'password';
-$dbName = 'myhmsdb';
+
 
 if (!defined('DB_SERVER')) {
 define('DB_SERVER', $dbServer);
