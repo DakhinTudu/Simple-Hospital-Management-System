@@ -31,6 +31,52 @@ This repository represents a major leap from the legacy version, introducing ind
 
 ---
 
+## 📸 System Screenshots
+
+Here is a glimpse of the improved "Dark-Structural" design and the newly added features:
+
+### 1. Home Page & Authentication Portal
+*(A sleek, glassmorphism-inspired login interface for all users)*
+<br>
+<img src="assets/screenshots/home-page.png" alt="Home Page & Authentication Portal" width="800">
+
+### 2. Contact Page
+*(Get in touch with the hospital administration)*
+<br>
+<img src="assets/screenshots/contact-page.png" alt="Contact Page" width="800">
+
+### 3. Departments Page
+*(Explore our specialized medical departments)*
+<br>
+<img src="assets/screenshots/departments-page.png" alt="Departments Page" width="800">
+
+### 4. Doctors Directory
+*(Browse our experienced medical professionals)*
+<br>
+<img src="assets/screenshots/doctors-page.png" alt="Doctors Directory" width="800">
+
+### 5. Patient Dashboard
+*(Mobile-responsive dashboard for patients to view appointments and history)*
+<br>
+<img src="assets/screenshots/patient-dashboard.png" alt="Patient Dashboard" width="800">
+
+### 6. Doctor's Clinical Workspace
+*(Advanced workspace for doctors with clinical logging and prescription management)*
+<br>
+<img src="assets/screenshots/doctor-dashboard.png" alt="Doctor Workspace" width="800">
+
+### 7. Admin Control Panel
+*(High-level overview, analytics, and hospital administration tools)*
+<br>
+<img src="assets/screenshots/admin-dashboard.png" alt="Admin Control Panel" width="800">
+
+### 8. Professional PDF Prescription
+*(TCPDF-generated clinical prescriptions with branding and signature placeholders)*
+<br>
+<img src="assets/screenshots/pdf-prescription.png" alt="PDF Prescription Example" width="800">
+
+---
+
 ## 🛠️ Technology Stack
 - **Frontend**: HTML5, Vanilla CSS3 (Custom Design System), JavaScript, Bootstrap 4.
 - **Backend**: PHP 8.x (Modernized Controller Logic).
