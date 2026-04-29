@@ -1,6 +1,9 @@
 <?php
 // Update these values for your local MySQL setup.
-
+$dbServer='localhost';
+$dbUser='root';
+$dbPass='password';
+$dbName='myhmsdb';
 
 if (!defined('DB_SERVER')) {
 define('DB_SERVER', $dbServer);
@@ -43,5 +46,10 @@ define('HMS_MAIL_FROM', 'your-email@example.com');
 }
 if (!defined('HMS_MAIL_FROM_NAME')) {
 define('HMS_MAIL_FROM_NAME', 'Global Hospital');
+}
+
+// Pagination settings
+if (!defined('RECORDS_PER_PAGE')) {
+    define('RECORDS_PER_PAGE', 10);
 }
 ?>

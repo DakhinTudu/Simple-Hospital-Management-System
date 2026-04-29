@@ -60,6 +60,6 @@ function render_app_sidebar($activePage, $role) {
                 </a>
             </div>
           </div>';
-    echo '<div class="sidebar-backdrop" id="sidebarBackdrop"></div>';
+    // Note: sidebarBackdrop is rendered by app-header.php — do NOT duplicate it here.
 }
 ?>

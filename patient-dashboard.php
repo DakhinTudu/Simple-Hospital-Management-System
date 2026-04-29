@@ -40,7 +40,7 @@ if(isset($_POST['app-submit'])) {
               'appdate' => $appdate,
               'apptime' => $apptime
             ));
-            echo "<script>alert('Your appointment successfully booked'); window.location.href='index.php';</script>";
+            echo "<script>alert('Your appointment successfully booked'); window.location.href='patient-dashboard.php';</script>";
           } else {
             echo "<script>alert('Unable to process your request. Please try again!');</script>";
           }
@@ -261,12 +261,12 @@ $patientLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE pid=" . (int
                             <h4 class="mb-0 font-weight-bold text-primary">Schedule New Appointment</h4>
                             <p class="text-muted small mb-0">Fill in the details below to book your slot.</p>
                         </div>
-                        <div class="card-body p-5">
+                        <div class="card-body p-3 p-md-5">
                             <form method="post" action="patient-dashboard.php">
                                 <?php echo hms_csrf_field(); ?>
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <div class="form-group mb-4">
+                                        <div class="form-group mb-3">
                                             <label>Select Specialization</label>
                                             <select name="spec" class="form-control custom-select" id="spec" required>
                                                 <option value="" disabled selected>Choose Specialization</option>
@@ -275,7 +275,7 @@ $patientLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE pid=" . (int
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="form-group mb-4">
+                                        <div class="form-group mb-3">
                                             <label>Select Doctor</label>
                                             <select name="doctor" class="form-control custom-select" id="doctor" required>
                                                 <option value="" disabled selected>Choose Doctor</option>
@@ -284,7 +284,7 @@ $patientLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE pid=" . (int
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group mb-4">
+                                        <div class="form-group mb-3">
                                             <label>Consultancy Fees</label>
                                             <div class="input-group">
                                                 <div class="input-group-prepend">
@@ -295,7 +295,7 @@ $patientLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE pid=" . (int
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group mb-4">
+                                        <div class="form-group mb-3">
                                             <label>Preferred Date</label>
                                             <input type="date" name="appdate" id="appdate" class="form-control" required min="<?php echo date('Y-m-d'); ?>">
                                         </div>
@@ -343,9 +343,21 @@ $patientLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE pid=" . (int
                                 </thead>
                                 <tbody>
                                     <?php 
-                                    $query = "select ID,doctor,docFees,appdate,apptime,userStatus,doctorStatus from appointmenttb where pid = ? ORDER BY appdate DESC, apptime DESC;";
+                                    $filters = [
+                                        'pid' => $pid,
+                                        'start_date' => $_GET['start_date'] ?? '',
+                                        'end_date' => $_GET['end_date'] ?? ''
+                                    ];
+                                    $filterData = hms_build_filter_where($filters);
+                                    $appPag = hms_get_pagination_data($con, "appointmenttb", $filterData['where'], $filterData['params'], $filterData['types']);
+                                    
+                                    $query = "select ID,doctor,docFees,appdate,apptime,userStatus,doctorStatus,
+                                              (SELECT COUNT(*) FROM prestb WHERE prestb.ID = appointmenttb.ID AND prestb.pid = appointmenttb.pid) AS is_prescribed
+                                              from appointmenttb where {$filterData['where']} ORDER BY appdate DESC, apptime DESC LIMIT {$appPag['limit']} OFFSET {$appPag['offset']};";
                                     $stmt = mysqli_prepare($con, $query);
-                                    mysqli_stmt_bind_param($stmt, "i", $pid);
+                                    if (!empty($filterData['params'])) {
+                                        mysqli_stmt_bind_param($stmt, $filterData['types'], ...$filterData['params']);
+                                    }
                                     mysqli_stmt_execute($stmt);
                                     $result = mysqli_stmt_get_result($stmt);
                                     while ($row = mysqli_fetch_array($result)){
@@ -357,23 +369,38 @@ $patientLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE pid=" . (int
                                         <td data-label="Time"><?php echo $row['apptime'];?></td>
                                         <td data-label="Status">
                                             <?php 
-                                            if(($row['userStatus']==1) && ($row['doctorStatus']==1)) echo '<span class="badge badge-success px-3 py-2 rounded-pill">Confirmed</span>';
-                                            elseif(($row['userStatus']==0) && ($row['doctorStatus']==1)) echo '<span class="badge badge-danger px-3 py-2 rounded-pill">Cancelled by You</span>';
-                                            elseif(($row['userStatus']==1) && ($row['doctorStatus']==0)) echo '<span class="badge badge-warning px-3 py-2 rounded-pill">Cancelled by Doctor</span>';
+                                            if(($row['userStatus']==1) && ($row['doctorStatus']==1)) {
+                                                if ($row['is_prescribed'] > 0)
+                                                    echo '<span class="badge badge-info px-3 py-2 rounded-pill">Consulted</span>';
+                                                else
+                                                    echo '<span class="badge badge-success px-3 py-2 rounded-pill">Confirmed</span>';
+                                            } elseif(($row['userStatus']==0) && ($row['doctorStatus']==1)) {
+                                                echo '<span class="badge badge-danger px-3 py-2 rounded-pill">Cancelled by You</span>';
+                                            } elseif(($row['userStatus']==1) && ($row['doctorStatus']==0)) {
+                                                echo '<span class="badge badge-warning px-3 py-2 rounded-pill">Cancelled by Doctor</span>';
+                                            }
                                             ?>
                                         </td>
                                         <td data-label="Action" class="text-center">
-                                            <?php if(($row['userStatus']==1) && ($row['doctorStatus']==1)) { ?>
-                                            <a href="patient-dashboard.php?ID=<?php echo $row['ID']?>&cancel=update" 
-                                               onclick="return confirm('Are you sure you want to cancel this appointment?')" 
-                                               class="btn btn-outline-danger btn-sm px-3 rounded-pill">Cancel</a>
-                                            <?php } else { echo '-'; } ?>
+                                            <?php if(($row['userStatus']==1) && ($row['doctorStatus']==1)) {
+                                                if ($row['is_prescribed'] > 0) { ?>
+                                                    <a href="generate-prescription-pdf.php?ID=<?php echo $row['ID'];?>" target="_blank" 
+                                                       class="btn btn-outline-primary btn-sm px-3 rounded-pill">
+                                                        <i class="fa fa-file-pdf-o mr-1"></i> View Rx
+                                                    </a>
+                                                <?php } else { ?>
+                                                    <a href="patient-dashboard.php?ID=<?php echo $row['ID']?>&cancel=update" 
+                                                       onclick="return confirm('Are you sure you want to cancel this appointment?')" 
+                                                       class="btn btn-outline-danger btn-sm px-3 rounded-pill">Cancel</a>
+                                                <?php }
+                                            } else { echo '-'; } ?>
                                         </td>
                                     </tr>
                                     <?php } ?>
                                 </tbody>
                             </table>
                         </div>
+                        <?php echo hms_render_pagination($appPag['page'], $appPag['totalPages'], "app-hist"); ?>
                     </div>
                 </div>
 
@@ -398,13 +425,14 @@ $patientLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE pid=" . (int
                                 </thead>
                                 <tbody>
                                     <?php 
+                                    $presPag = hms_get_pagination_data($con, "prestb", "pid=?", [$pid], "i");
                                     $query = "select p.doctor,p.ID,p.appdate,p.apptime,p.disease,p.allergy,p.prescription,
                                               GROUP_CONCAT(CONCAT(e.medicine_name,' (',e.dosage,', ',e.duration,')') SEPARATOR '; ') AS emeds
                                               from prestb p
                                               left join eprescriptiontb e on e.appointment_id=p.ID and e.patient_id=p.pid
                                               where p.pid=?
                                               group by p.doctor,p.ID,p.appdate,p.apptime,p.disease,p.allergy,p.prescription
-                                              ORDER BY p.appdate DESC;";
+                                              ORDER BY p.appdate DESC LIMIT {$presPag['limit']} OFFSET {$presPag['offset']};";
                                     $stmt = mysqli_prepare($con, $query);
                                     mysqli_stmt_bind_param($stmt, "i", $pid);
                                     mysqli_stmt_execute($stmt);
@@ -436,6 +464,7 @@ $patientLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE pid=" . (int
                                 </tbody>
                             </table>
                         </div>
+                        <?php echo hms_render_pagination($presPag['page'], $presPag['totalPages'], "list-pres"); ?>
                     </div>
                 </div>
 
@@ -453,7 +482,11 @@ $patientLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE pid=" . (int
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php if($patientLabRows){ while($row = mysqli_fetch_assoc($patientLabRows)){ ?>
+                                    <?php 
+                                    $labPag = hms_get_pagination_data($con, "labtesttb", "pid=?", [$pid], "i");
+                                    $patientLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE pid=" . (int)$pid . " ORDER BY id DESC LIMIT {$labPag['limit']} OFFSET {$labPag['offset']}");
+                                    if($patientLabRows){ while($row = mysqli_fetch_assoc($patientLabRows)){ 
+                                    ?>
                                     <tr>
                                         <td>#<?php echo (int)$row['id']; ?></td>
                                         <td><?php echo hms_esc($row['doctor']); ?></td>
@@ -468,6 +501,7 @@ $patientLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE pid=" . (int
                                 </tbody>
                             </table>
                         </div>
+                        <?php echo hms_render_pagination($labPag['page'], $labPag['totalPages'], "list-lab"); ?>
                     </div>
                 </div>
             </div>
@@ -478,6 +512,14 @@ $patientLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE pid=" . (int
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
     <script>
+      // Tab Persistence Logic
+      (function () {
+        const hash = window.location.hash;
+        if (hash) {
+          $('.list-group-item[href="' + hash + '"]').tab('show');
+        }
+      })();
+
       // Appointment Slot Logic
       (function () {
         const specEl = document.getElementById('spec');
@@ -485,6 +527,8 @@ $patientLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE pid=" . (int
         const dateEl = document.getElementById('appdate');
         const timeEl = document.getElementById('apptime');
         const feesEl = document.getElementById('docFees');
+
+        if (!specEl || !doctorEl || !dateEl || !timeEl || !feesEl) return;
 
         // Filter doctors by specialization
         specEl.addEventListener('change', function() {

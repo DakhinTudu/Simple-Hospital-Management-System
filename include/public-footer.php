@@ -13,6 +13,7 @@
                     <li><a href="services.php">About Us</a></li>
                     <li><a href="doctors.php">Doctors</a></li>
                     <li><a href="contact-us.php">Contact</a></li>
+                    <li><a href="staff-login.php" class="text-white-50"><i class="fa fa-lock mr-1"></i>Staff Portal</a></li>
                 </ul>
             </div>
             <div class="col-lg-4 col-md-4 mb-5 ml-auto">

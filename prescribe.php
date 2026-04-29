@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <?php
 include('doctor-auth.php');
+include('include/config.php');
 include('include/security.php');
 hms_require_role('doctor', 'index.php');
 $pid='';
@@ -53,17 +54,14 @@ if(isset($_POST['prescribe']) && isset($_POST['pid']) && isset($_POST['ID']) && 
         'patient_id' => $pid,
         'doctor' => $doctor
       ));
-      echo "<script>alert('Prescribed successfully!');</script>";
+      // Redirect back to Prescription List tab on the dashboard
+      header('Location: doctor-dashboard.php#list-pres');
+      exit();
     }
     else{
       echo "<script>alert('Unable to process your request. Try again!');</script>";
     }
-  // else{
-  //   echo "<script>alert('GET is not working!');</script>";
-  // }initial
-  // enga error?
 }
-
 ?>
 <html lang="en">
 <head>
@@ -98,56 +96,69 @@ if(isset($_POST['prescribe']) && isset($_POST['pid']) && isset($_POST['ID']) && 
                 </div>
             </div>
 
-            <div class="public-card p-5 border-0 shadow-sm">
-   <div class="container-fluid" style="margin-top:50px;">
-    <h3 style = "margin-left: 40%;  padding-bottom: 20px; font-family: 'IBM Plex Sans', sans-serif;"> Welcome &nbsp<?php echo $doctor ?>
-   </h3>
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-4">
+                    <h4 class="mb-0 font-weight-bold text-primary">Clinical Prescription Form</h4>
+                    <p class="text-muted small mb-0">Patient: <?php echo hms_esc($fname.' '.$lname); ?> &nbsp;|&nbsp; ID: <?php echo (int)$pid; ?> &nbsp;|&nbsp; Appt #<?php echo (int)$ID; ?></p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" action="prescribe.php">
+                        <?php echo hms_csrf_field(); ?>
+                        <input type="hidden" name="fname" value="<?php echo hms_esc($fname); ?>">
+                        <input type="hidden" name="lname" value="<?php echo hms_esc($lname); ?>">
+                        <input type="hidden" name="appdate" value="<?php echo hms_esc($appdate); ?>">
+                        <input type="hidden" name="apptime" value="<?php echo hms_esc($apptime); ?>">
+                        <input type="hidden" name="pid" value="<?php echo (int)$pid; ?>">
+                        <input type="hidden" name="ID" value="<?php echo (int)$ID; ?>">
 
-   <div class="tab-pane" id="list-pres" role="tabpanel" aria-labelledby="list-pres-list">
-        <form class="form-group" name="prescribeform" method="post" action="prescribe.php">
-          <?php echo hms_csrf_field(); ?>
-        
-          <div class="row">
-                  <div class="col-md-4"><label>Disease:</label></div>
-                  <div class="col-md-8">
-                  <!-- <input type="text" class="form-control" name="disease" required> -->
-                  <textarea id="disease" class="form-control" rows ="5" name="disease" required></textarea>
-                  </div><br><br><br>
-                  
-                  <div class="col-md-4"><label>Allergies:</label></div>
-                  <div class="col-md-8">
-                  <textarea id="allergy" class="form-control" rows ="5" name="allergy" required></textarea>
-                  </div><br><br><br>
-                  <div class="col-md-4"><label>Prescription:</label></div>
-                  <div class="col-md-8">
-                  <textarea id="prescription" class="form-control" rows ="10" name="prescription" required></textarea>
-                  </div><br><br><br>
-                  <div class="col-md-4"><label>Medicine Name:</label></div>
-                  <div class="col-md-8"><input type="text" class="form-control" name="medicine_name" required></div><br><br><br>
-                  <div class="col-md-4"><label>Dosage:</label></div>
-                  <div class="col-md-8"><input type="text" class="form-control" name="dosage" placeholder="e.g. 1 tablet after meal" required></div><br><br><br>
-                  <div class="col-md-4"><label>Duration:</label></div>
-                  <div class="col-md-8"><input type="text" class="form-control" name="duration" placeholder="e.g. 5 days" required></div><br><br><br>
-                  <div class="col-md-4"><label>Instructions:</label></div>
-                  <div class="col-md-8"><textarea class="form-control" rows="4" name="instructions"></textarea></div><br><br><br>
-                  <input type="hidden" name="fname" value="<?php echo $fname ?>" />
-                  <input type="hidden" name="lname" value="<?php echo $lname ?>" />
-                  <input type="hidden" name="appdate" value="<?php echo $appdate ?>" />
-                  <input type="hidden" name="apptime" value="<?php echo $apptime ?>" />
-                  <input type="hidden" name="pid" value="<?php echo $pid ?>" />
-                  <input type="hidden" name="ID" value="<?php echo $ID ?>" />
-                  <br><br><br><br>
-          <input type="submit" name="prescribe" value="Prescribe" class="btn btn-primary" style="margin-left: 40pc;">
-          
-        </form>
-        <br>
-      </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>Diagnosis / Disease</label>
+                                <textarea class="form-control" rows="4" name="disease" required></textarea>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Allergies</label>
+                                <textarea class="form-control" rows="4" name="allergy" required></textarea>
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label>Prescription Notes</label>
+                                <textarea class="form-control" rows="5" name="prescription" required></textarea>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label>Medicine Name</label>
+                                <input type="text" class="form-control" name="medicine_name" placeholder="e.g. Paracetamol" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label>Dosage</label>
+                                <input type="text" class="form-control" name="dosage" placeholder="e.g. 1 tablet after meal" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label>Duration</label>
+                                <input type="text" class="form-control" name="duration" placeholder="e.g. 5 days" required>
+                            </div>
+                            <div class="col-md-12 mb-4">
+                                <label>Additional Instructions</label>
+                                <textarea class="form-control" rows="3" name="instructions" placeholder="Optional notes..."></textarea>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <a href="doctor-dashboard.php" class="btn btn-outline-secondary rounded-pill px-4 mr-2">
+                                <i class="fa fa-arrow-left mr-1"></i> Cancel
+                            </a>
+                            <button type="submit" name="prescribe" class="btn btn-primary rounded-pill px-5">
+                                <i class="fa fa-check mr-2"></i> Save Prescription
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </main>
       
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
   </body>

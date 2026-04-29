@@ -3,6 +3,7 @@
 include('doctor-auth.php');
 include('include/config.php');
 include('include/security.php');
+include('core-functions.php');
 hms_require_role('doctor', 'index.php');
 $doctor = $_SESSION['dname'];
 
@@ -70,17 +71,20 @@ $doctorLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE doctor='" . m
                     <p class="text-muted mb-0">Manage your clinical schedule and patient prescriptions.</p>
                 </div>
                 <div class="text-right d-flex align-items-center">
-                    <form class="form-inline mr-3 mb-0" method="post" action="search.php">
-                        <?php echo hms_csrf_field(); ?>
-                        <div class="input-group">
-                            <input class="form-control rounded-left border-right-0" type="text" placeholder="Patient Contact..." name="contact">
-                            <div class="input-group-append">
-                                <button type="submit" class="btn btn-primary rounded-right" name="search_submit">
-                                    <i class="fa fa-search"></i>
-                                </button>
+                    <div class="search-mobile-wrapper mr-3">
+                        <button class="search-toggle-btn mr-2"><i class="fa fa-search"></i></button>
+                        <form class="form-inline mb-0" method="post" action="search.php">
+                            <?php echo hms_csrf_field(); ?>
+                            <div class="input-group">
+                                <input class="form-control form-control-sm rounded-left border-right-0" type="text" placeholder="Patient Contact..." name="contact">
+                                <div class="input-group-append">
+                                    <button type="submit" class="btn btn-primary btn-sm rounded-right" name="search_submit">
+                                        <i class="fa fa-search"></i>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                     <span class="badge badge-primary-soft p-3 px-4 rounded-pill shadow-sm">
                         <i class="fa fa-clock-o mr-2"></i> <?php echo date('l, d M'); ?>
                     </span>
@@ -123,8 +127,28 @@ $doctorLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE doctor='" . m
                 <!-- Appointment List -->
                 <div class="tab-pane fade" id="list-app" role="tabpanel">
                     <div class="card shadow-sm border-0">
-                        <div class="card-header bg-white py-4">
+                        <div class="card-header bg-white py-4 d-flex justify-content-between align-items-center">
                             <h4 class="mb-0 font-weight-bold text-primary">Patient Appointment List</h4>
+                            <button class="btn btn-outline-primary btn-sm rounded-pill px-3 mr-2" type="button" data-toggle="collapse" data-target="#filterDoctorApps">
+                                <i class="fa fa-filter mr-1"></i> <span>Filter</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Filter Collapse -->
+                        <div class="collapse mb-4 px-4 mt-3" id="filterDoctorApps">
+                            <form method="get" action="doctor-dashboard.php#list-app" class="row align-items-end bg-light p-3 rounded shadow-sm">
+                                <div class="col-md-4 mb-2">
+                                    <label class="small font-weight-bold">Start Date</label>
+                                    <input type="date" name="start_date" class="form-control form-control-sm" value="<?php echo hms_esc($_GET['start_date'] ?? ''); ?>">
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <label class="small font-weight-bold">End Date</label>
+                                    <input type="date" name="end_date" class="form-control form-control-sm" value="<?php echo hms_esc($_GET['end_date'] ?? ''); ?>">
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <button type="submit" class="btn btn-primary btn-sm btn-block">Apply Filters</button>
+                                </div>
+                            </form>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-modern table-hover mb-0">
@@ -142,9 +166,21 @@ $doctorLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE doctor='" . m
                                 </thead>
                                 <tbody>
                                     <?php 
-                                    $query = "select pid,ID,fname,lname,gender,email,contact,appdate,apptime,userStatus,doctorStatus from appointmenttb where doctor=? ORDER BY appdate DESC, apptime DESC;";
+                                    $filters = [
+                                        'doctor' => $doctor,
+                                        'start_date' => $_GET['start_date'] ?? '',
+                                        'end_date' => $_GET['end_date'] ?? ''
+                                    ];
+                                    $filterData = hms_build_filter_where($filters);
+                                    $appPag = hms_get_pagination_data($con, "appointmenttb", $filterData['where'], $filterData['params'], $filterData['types']);
+                                    
+                                    $query = "select pid,ID,fname,lname,gender,email,contact,appdate,apptime,userStatus,doctorStatus,
+                                               (SELECT COUNT(*) FROM prestb WHERE prestb.ID = appointmenttb.ID AND prestb.doctor = appointmenttb.doctor) AS is_prescribed
+                                               from appointmenttb where {$filterData['where']} ORDER BY appdate DESC, apptime DESC LIMIT {$appPag['limit']} OFFSET {$appPag['offset']};";
                                     $stmt = mysqli_prepare($con, $query);
-                                    mysqli_stmt_bind_param($stmt, "s", $doctor);
+                                    if (!empty($filterData['params'])) {
+                                        mysqli_stmt_bind_param($stmt, $filterData['types'], ...$filterData['params']);
+                                    }
                                     mysqli_stmt_execute($stmt);
                                     $result = mysqli_stmt_get_result($stmt);
                                     while ($row = mysqli_fetch_array($result)){
@@ -157,19 +193,35 @@ $doctorLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE doctor='" . m
                                         <td data-label="Date"><?php echo date('d M Y', strtotime($row['appdate']));?></td>
                                         <td data-label="Time"><?php echo $row['apptime'];?></td>
                                         <td data-label="Status">
-                                            <?php 
-                                            if(($row['userStatus']==1) && ($row['doctorStatus']==1)) echo '<span class="badge badge-success px-2 rounded-pill">Confirmed</span>';
-                                            else echo '<span class="badge badge-danger px-2 rounded-pill">Cancelled</span>';
+                                            <?php
+                                             if(($row['userStatus']==1) && ($row['doctorStatus']==1)) {
+                                                 if ($row['is_prescribed'] > 0)
+                                                     echo '<span class="badge badge-info px-2 rounded-pill">Prescribed</span>';
+                                                 else
+                                                     echo '<span class="badge badge-success px-2 rounded-pill">Confirmed</span>';
+                                             } else {
+                                                 echo '<span class="badge badge-danger px-2 rounded-pill">Cancelled</span>';
+                                             }
                                             ?>
                                         </td>
                                         <td class="text-center">
                                             <?php if(($row['userStatus']==1) && ($row['doctorStatus']==1)) { ?>
                                             <div class="btn-group">
+                                                <?php if ($row['is_prescribed'] > 0) { ?>
+                                                     <span class="badge badge-info-soft px-3 py-2 rounded-pill mr-2">
+                                                         <i class="fa fa-check-circle mr-1"></i> Prescribed
+                                                     </span>
+                                                     <a href="generate-prescription-pdf.php?ID=<?php echo $row['ID'];?>" target="_blank" 
+                                                        class="btn btn-outline-primary btn-sm px-3 rounded-pill">
+                                                         <i class="fa fa-file-pdf-o mr-1"></i> PDF
+                                                     </a>
+                                                <?php } else { ?>
                                                 <a href="doctor-dashboard.php?ID=<?php echo $row['ID']?>&cancel=update" 
                                                    onclick="return confirm('Are you sure you want to cancel this appointment?')" 
                                                    class="btn btn-outline-danger btn-sm px-3 rounded-pill mr-2">Cancel</a>
                                                 <a href="prescribe.php?pid=<?php echo $row['pid'];?>&ID=<?php echo $row['ID'];?>&fname=<?php echo $row['fname'];?>&lname=<?php echo $row['lname'];?>&appdate=<?php echo $row['appdate'];?>&apptime=<?php echo $row['apptime'];?>" 
                                                    class="btn btn-success btn-sm px-3 rounded-pill">Prescribe</a>
+                                                <?php } ?>
                                             </div>
                                             <?php } else { echo '-'; } ?>
                                         </td>
@@ -178,6 +230,7 @@ $doctorLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE doctor='" . m
                                 </tbody>
                             </table>
                         </div>
+                        <?php echo hms_render_pagination($appPag['page'], $appPag['totalPages'], "list-app"); ?>
                     </div>
                 </div>
 
@@ -186,8 +239,8 @@ $doctorLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE doctor='" . m
                     <div class="card shadow-sm border-0">
                         <div class="card-header bg-white py-4 d-flex justify-content-between align-items-center">
                             <h4 class="mb-0 font-weight-bold text-primary">Issued Prescriptions</h4>
-                            <a href="export-prescriptions.php" class="btn btn-outline-success btn-sm rounded-pill px-4">
-                                <i class="fa fa-file-excel-o mr-2"></i> Download clinical log
+                            <a href="export-prescriptions.php" class="btn btn-outline-success btn-sm export-btn-mobile px-4">
+                                <i class="fa fa-file-excel-o mr-2"></i> <span>Download clinical log</span>
                             </a>
                         </div>
                         <div class="table-responsive">
@@ -204,7 +257,8 @@ $doctorLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE doctor='" . m
                                 </thead>
                                 <tbody>
                                     <?php 
-                                    $query = "select * from prestb where doctor=? ORDER BY appdate DESC;";
+                                    $presPag = hms_get_pagination_data($con, "prestb", "doctor=?", [$doctor], "s");
+                                    $query = "select * from prestb where doctor=? ORDER BY appdate DESC LIMIT {$presPag['limit']} OFFSET {$presPag['offset']};";
                                     $stmt = mysqli_prepare($con, $query);
                                     mysqli_stmt_bind_param($stmt, "s", $doctor);
                                     mysqli_stmt_execute($stmt);
@@ -228,6 +282,7 @@ $doctorLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE doctor='" . m
                                 </tbody>
                             </table>
                         </div>
+                        <?php echo hms_render_pagination($presPag['page'], $presPag['totalPages'], "list-pres"); ?>
                     </div>
                 </div>
 
@@ -262,7 +317,11 @@ $doctorLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE doctor='" . m
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php if($doctorLabRows){ while($row = mysqli_fetch_assoc($doctorLabRows)){ ?>
+                                    <?php 
+                                    $labPag = hms_get_pagination_data($con, "labtesttb", "doctor=?", [$doctor], "s");
+                                    $doctorLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE doctor='" . mysqli_real_escape_string($con, $doctor) . "' ORDER BY id DESC LIMIT {$labPag['limit']} OFFSET {$labPag['offset']}");
+                                    if($doctorLabRows){ while($row = mysqli_fetch_assoc($doctorLabRows)){ 
+                                    ?>
                                     <tr>
                                         <td>#<?php echo (int)$row['id']; ?></td>
                                         <td><?php echo (int)$row['pid']; ?></td>
@@ -276,6 +335,7 @@ $doctorLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE doctor='" . m
                                 </tbody>
                             </table>
                         </div>
+                        <?php echo hms_render_pagination($labPag['page'], $labPag['totalPages'], "list-lab"); ?>
                     </div>
                 </div>
             </div>
@@ -285,5 +345,33 @@ $doctorLabRows = mysqli_query($con, "SELECT * FROM labtesttb WHERE doctor='" . m
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script>
+      // Tab Persistence & Mobile UX Logic
+      (function () {
+        const hash = window.location.hash;
+        if (hash) {
+          $('.list-group-item[href="' + hash + '"]').tab('show');
+        }
+
+        // Mobile Search Toggle
+        document.querySelectorAll('.search-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                this.parentElement.classList.toggle('active');
+                const input = this.parentElement.querySelector('input');
+                if (this.parentElement.classList.contains('active') && input) {
+                    input.focus();
+                }
+            });
+        });
+
+        // Close search when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-mobile-wrapper')) {
+                document.querySelectorAll('.search-mobile-wrapper').forEach(w => w.classList.remove('active'));
+            }
+        });
+      })();
+    </script>
   </body>
 </html>

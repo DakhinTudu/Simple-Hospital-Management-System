@@ -95,8 +95,6 @@ $doctorLoadRows = hms_get_doctor_load($con, 8);
 $trend14 = hms_get_appointments_trend($con, 14);
 $specLoadRows = hms_get_specialization_load($con);
 $slotUtilToday = hms_get_slot_utilization_today($con);
-$staffRows = mysqli_query($con, "SELECT * FROM stafftb ORDER BY id DESC");
-$labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
 ?>
 <html lang="en">
   <head>
@@ -239,21 +237,49 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                         <div class="card-header bg-white py-4 d-flex justify-content-between align-items-center">
                             <h4 class="mb-0 font-weight-bold text-primary">Doctor Registry</h4>
                             <div class="d-flex align-items-center">
-                                <a href="export-doctors.php" class="btn btn-outline-success btn-sm rounded-pill px-3 mr-3">
-                                    <i class="fa fa-file-excel-o mr-1"></i> Export Excel
+                                <button class="btn btn-outline-primary btn-sm rounded-pill px-3 mr-2" type="button" data-toggle="collapse" data-target="#filterDoctors">
+                                    <i class="fa fa-filter mr-1"></i> <span>Filter</span>
+                                </button>
+                                <a href="export-doctors.php" class="btn btn-outline-success btn-sm export-btn-mobile px-3 mr-3">
+                                    <i class="fa fa-file-excel-o mr-1"></i> <span>Export Excel</span>
                                 </a>
-                                <form class="form-inline" method="post" action="doctorsearch.php">
-                                    <?php echo hms_csrf_field(); ?>
-                                    <div class="input-group">
-                                        <input type="text" name="doctor_contact" placeholder="Search Email..." class="form-control rounded-left border-right-0">
-                                        <div class="input-group-append">
-                                            <button type="submit" name="doctor_search_submit" class="btn btn-primary rounded-right">
-                                                <i class="fa fa-search"></i>
-                                            </button>
+                                <div class="search-mobile-wrapper">
+                                    <button class="search-toggle-btn mr-2"><i class="fa fa-search"></i></button>
+                                    <form class="form-inline mb-0" method="post" action="doctorsearch.php">
+                                        <?php echo hms_csrf_field(); ?>
+                                        <div class="input-group">
+                                            <input type="text" name="doctor_contact" placeholder="Search Email..." class="form-control form-control-sm rounded-left border-right-0">
+                                            <div class="input-group-append">
+                                                <button type="submit" name="doctor_search_submit" class="btn btn-primary btn-sm rounded-right">
+                                                    <i class="fa fa-search"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </form>
+                                    </form>
+                                </div>
                             </div>
+                        </div>
+
+                        <!-- Doctor Filter Collapse -->
+                        <div class="collapse mb-4 px-4" id="filterDoctors">
+                            <form method="get" action="admin-dashboard.php#list-doc" class="row align-items-end bg-light p-3 rounded shadow-sm">
+                                <div class="col-md-9 mb-2">
+                                    <label class="small font-weight-bold">Specialization</label>
+                                    <select name="doc_spec" class="form-control form-control-sm">
+                                        <option value="">All Specializations</option>
+                                        <?php 
+                                        $specs = mysqli_query($con, "SELECT DISTINCT spec FROM doctb");
+                                        while($s = mysqli_fetch_assoc($specs)) {
+                                            $sel = ($_GET['doc_spec'] ?? '') === $s['spec'] ? 'selected' : '';
+                                            echo "<option value='".hms_esc($s['spec'])."' $sel>".hms_esc($s['spec'])."</option>";
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <button type="submit" class="btn btn-primary btn-sm btn-block">Apply</button>
+                                </div>
+                            </form>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-modern table-hover mb-0">
@@ -268,7 +294,19 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                                 </thead>
                                 <tbody>
                                     <?php 
-                                    $result = mysqli_query($con, "select * from doctb");
+                                    $filters = [
+                                        'spec' => $_GET['doc_spec'] ?? ''
+                                    ];
+                                    $filterData = hms_build_filter_where($filters);
+                                    $docPag = hms_get_pagination_data($con, "doctb", $filterData['where'], $filterData['params'], $filterData['types']);
+                                    
+                                    $query = "select * from doctb WHERE {$filterData['where']} LIMIT {$docPag['limit']} OFFSET {$docPag['offset']}";
+                                    $stmt = mysqli_prepare($con, $query);
+                                    if (!empty($filterData['params'])) {
+                                        mysqli_stmt_bind_param($stmt, $filterData['types'], ...$filterData['params']);
+                                    }
+                                    mysqli_stmt_execute($stmt);
+                                    $result = mysqli_stmt_get_result($stmt);
                                     while ($row = mysqli_fetch_array($result)){
                                     ?>
                                     <tr>
@@ -282,6 +320,7 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                                 </tbody>
                             </table>
                         </div>
+                        <?php echo hms_render_pagination($docPag['page'], $docPag['totalPages'], "list-doc"); ?>
                     </div>
                 </div>
 
@@ -291,19 +330,19 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                         <div class="card-header bg-white py-4">
                             <h4 class="mb-0 font-weight-bold text-primary">Add New Medical Professional</h4>
                         </div>
-                        <div class="card-body p-5">
+                        <div class="card-body p-3 p-md-5">
                             <form method="post" action="admin-dashboard.php">
                                 <?php echo hms_csrf_field(); ?>
                                 <div class="row">
-                                    <div class="col-md-6 mb-4">
+                                    <div class="col-md-6 mb-3">
                                         <label>Full Name</label>
                                         <input type="text" class="form-control" name="doctor" required>
                                     </div>
-                                    <div class="col-md-6 mb-4">
+                                    <div class="col-md-6 mb-3">
                                         <label>Email Address</label>
                                         <input type="email" class="form-control" name="demail" required>
                                     </div>
-                                    <div class="col-md-6 mb-4">
+                                    <div class="col-md-6 mb-3">
                                         <label>Specialization</label>
                                         <select name="special" class="form-control custom-select" required>
                                             <option value="" disabled selected>Choose Specialty</option>
@@ -313,29 +352,29 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                                             <option value="Pediatrician">Pediatrician</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-6 mb-4">
+                                    <div class="col-md-6 mb-3">
                                         <label>Consultancy Fees (₹)</label>
                                         <input type="number" class="form-control" name="docFees" required>
                                     </div>
-                                    <div class="col-md-6 mb-4">
+                                    <div class="col-md-6 mb-3">
                                         <label>Security Password</label>
                                         <input type="password" class="form-control" name="dpassword" required>
                                     </div>
-                                    <div class="col-md-6 mb-4">
+                                    <div class="col-md-6 mb-3">
                                         <label>Confirm Password</label>
                                         <input type="password" class="form-control" name="cdpassword" required>
                                     </div>
                                 </div>
                                 <hr class="my-4">
                                 <div class="text-right">
-                                    <button type="submit" name="docsub" class="btn btn-primary btn-lg px-5 rounded-pill shadow-sm">Register Doctor</button>
+                                    <button type="submit" name="docsub" class="btn btn-primary btn-lg px-5 rounded-pill shadow-sm">Register</button>
                                 </div>
                             </form>
                         </div>
                     </div>
                 </div>
 
-                <!-- Other Tabs (Patient List, Appointments, Reports) - Simplified for brevity in this rewrite -->
+                <!-- Patient List -->
                 <div class="tab-pane fade" id="list-pat" role="tabpanel">
                     <div class="card shadow-sm border-0">
                         <div class="card-header bg-white py-4">
@@ -345,7 +384,6 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                             <table class="table table-modern table-hover mb-0">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
                                         <th>Name</th>
                                         <th>Gender</th>
                                         <th>Email</th>
@@ -354,7 +392,8 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                                 </thead>
                                 <tbody>
                                     <?php 
-                                    $result = mysqli_query($con, "select * from patreg");
+                                    $patPag = hms_get_pagination_data($con, "patreg");
+                                    $result = mysqli_query($con, "select * from patreg LIMIT {$patPag['limit']} OFFSET {$patPag['offset']}");
                                     while ($row = mysqli_fetch_array($result)){
                                     ?>
                                     <tr>
@@ -362,33 +401,64 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                                         <td data-label="Gender"><?php echo ucfirst($row['gender']);?></td>
                                         <td data-label="Email"><?php echo $row['email'];?></td>
                                         <td data-label="Contact"><?php echo $row['contact'];?></td>
-                                        <td data-label="Password" class="text-muted small">********</td>
                                     </tr>
                                     <?php } ?>
                                 </tbody>
                             </table>
                         </div>
+                        <?php echo hms_render_pagination($patPag['page'], $patPag['totalPages'], "list-pat"); ?>
                     </div>
                 </div>
                 
-                <!-- Placeholder for remaining tabs to maintain functionality -->
+                <!-- Appointment Details -->
                 <div class="tab-pane fade" id="list-app" role="tabpanel">
                     <div class="card shadow-sm border-0">
                         <div class="card-header bg-white py-4 d-flex justify-content-between align-items-center">
                             <h4 class="mb-0 font-weight-bold text-primary">Appointment Details</h4>
                             <div class="d-flex align-items-center">
-                                <a href="export-appointments.php" class="btn btn-outline-success btn-sm rounded-pill px-3 mr-3">
-                                    <i class="fa fa-file-excel-o mr-1"></i> Export Excel
+                                <button class="btn btn-outline-primary btn-sm rounded-pill px-3 mr-2" type="button" data-toggle="collapse" data-target="#filterAppointments">
+                                    <i class="fa fa-filter mr-1"></i> <span>Filter</span>
+                                </button>
+                                <a href="export-appointments.php" class="btn btn-outline-success btn-sm export-btn-mobile px-3 mr-3">
+                                    <i class="fa fa-file-excel-o mr-1"></i> <span>Export Excel</span>
                                 </a>
-                                <form class="form-inline" method="post" action="appsearch.php">
-                                    <div class="input-group">
-                                        <input type="text" name="app_search" placeholder="Search..." class="form-control rounded-left border-right-0">
-                                        <div class="input-group-append">
-                                            <button type="submit" name="app_search_submit" class="btn btn-primary rounded-right"><i class="fa fa-search"></i></button>
+                                <div class="search-mobile-wrapper">
+                                    <button class="search-toggle-btn mr-2"><i class="fa fa-search"></i></button>
+                                    <form class="form-inline mb-0" method="post" action="appsearch.php">
+                                        <div class="input-group">
+                                            <input type="text" name="app_search" placeholder="Search..." class="form-control form-control-sm rounded-left border-right-0">
+                                            <div class="input-group-append">
+                                                <button type="submit" name="app_search_submit" class="btn btn-primary btn-sm rounded-right"><i class="fa fa-search"></i></button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </form>
+                                    </form>
+                                </div>
                             </div>
+                        </div>
+                        
+                        <!-- Filter Collapse -->
+                        <div class="collapse mb-4 px-4" id="filterAppointments">
+                            <form method="get" action="admin-dashboard.php#list-app" class="row align-items-end bg-light p-3 rounded shadow-sm">
+                                <div class="col-md-3 mb-2">
+                                    <label class="small font-weight-bold">Start Date</label>
+                                    <input type="date" name="start_date" class="form-control form-control-sm" value="<?php echo hms_esc($_GET['start_date'] ?? ''); ?>">
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <label class="small font-weight-bold">End Date</label>
+                                    <input type="date" name="end_date" class="form-control form-control-sm" value="<?php echo hms_esc($_GET['end_date'] ?? ''); ?>">
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <label class="small font-weight-bold">Status</label>
+                                    <select name="status" class="form-control form-control-sm">
+                                        <option value="">All Status</option>
+                                        <option value="confirmed" <?php echo ($_GET['status'] ?? '') === 'confirmed' ? 'selected' : ''; ?>>Confirmed</option>
+                                        <option value="cancelled" <?php echo ($_GET['status'] ?? '') === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <button type="submit" class="btn btn-primary btn-sm btn-block">Apply Filters</button>
+                                </div>
+                            </form>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-modern table-hover mb-0">
@@ -405,7 +475,21 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                                 </thead>
                                 <tbody>
                                     <?php 
-                                    $result = mysqli_query($con, "select * from appointmenttb ORDER BY appdate DESC, apptime DESC LIMIT 100");
+                                    $filters = [
+                                        'start_date' => $_GET['start_date'] ?? '',
+                                        'end_date' => $_GET['end_date'] ?? '',
+                                        'status' => $_GET['status'] ?? ''
+                                    ];
+                                    $filterData = hms_build_filter_where($filters);
+                                    $appPag = hms_get_pagination_data($con, "appointmenttb", $filterData['where'], $filterData['params'], $filterData['types']);
+                                    
+                                    $query = "select * from appointmenttb WHERE {$filterData['where']} ORDER BY appdate DESC, apptime DESC LIMIT {$appPag['limit']} OFFSET {$appPag['offset']}";
+                                    $stmt = mysqli_prepare($con, $query);
+                                    if (!empty($filterData['params'])) {
+                                        mysqli_stmt_bind_param($stmt, $filterData['types'], ...$filterData['params']);
+                                    }
+                                    mysqli_stmt_execute($stmt);
+                                    $result = mysqli_stmt_get_result($stmt);
                                     while ($row = mysqli_fetch_array($result)){
                                     ?>
                                     <tr>
@@ -426,6 +510,7 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                                 </tbody>
                             </table>
                         </div>
+                        <?php echo hms_render_pagination($appPag['page'], $appPag['totalPages'], "list-app"); ?>
                     </div>
                 </div>
 
@@ -435,19 +520,22 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                         <div class="card-header bg-white py-4 d-flex justify-content-between align-items-center">
                             <h4 class="mb-0 font-weight-bold text-primary">Global Prescription Registry</h4>
                             <div class="d-flex align-items-center">
-                                <a href="export-prescriptions.php" class="btn btn-outline-success btn-sm rounded-pill px-3 mr-3">
-                                    <i class="fa fa-file-excel-o mr-1"></i> Export Excel
+                                <a href="export-prescriptions.php" class="btn btn-outline-success btn-sm export-btn-mobile px-3 mr-3">
+                                    <i class="fa fa-file-excel-o mr-1"></i> <span>Export Excel</span>
                                 </a>
-                                <form class="form-inline" method="post" action="pressearch.php">
-                                    <div class="input-group">
-                                        <input type="text" name="patient_contact" placeholder="Search Patient..." class="form-control rounded-left border-right-0">
-                                        <div class="input-group-append">
-                                            <button type="submit" name="pres_search_submit" class="btn btn-primary rounded-right">
-                                                <i class="fa fa-search"></i>
-                                            </button>
+                                <div class="search-mobile-wrapper">
+                                    <button class="search-toggle-btn mr-2"><i class="fa fa-search"></i></button>
+                                    <form class="form-inline mb-0" method="post" action="pressearch.php">
+                                        <div class="input-group">
+                                            <input type="text" name="patient_contact" placeholder="Search Patient..." class="form-control form-control-sm rounded-left border-right-0">
+                                            <div class="input-group-append">
+                                                <button type="submit" name="pres_search_submit" class="btn btn-primary btn-sm rounded-right">
+                                                    <i class="fa fa-search"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </form>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                         <div class="table-responsive">
@@ -464,7 +552,8 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                                 </thead>
                                 <tbody>
                                     <?php 
-                                    $result = mysqli_query($con, "select * from prestb ORDER BY appdate DESC");
+                                    $presPag = hms_get_pagination_data($con, "prestb");
+                                    $result = mysqli_query($con, "select * from prestb ORDER BY appdate DESC LIMIT {$presPag['limit']} OFFSET {$presPag['offset']}");
                                     while ($row = mysqli_fetch_array($result)){
                                     ?>
                                     <tr>
@@ -484,6 +573,7 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                                 </tbody>
                             </table>
                         </div>
+                        <?php echo hms_render_pagination($presPag['page'], $presPag['totalPages'], "list-pres"); ?>
                     </div>
                 </div>
 
@@ -520,7 +610,8 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                                 </thead>
                                 <tbody>
                                     <?php 
-                                    $result = mysqli_query($con, "select * from contact ORDER BY contact DESC");
+                                    $mesPag = hms_get_pagination_data($con, "contact");
+                                    $result = mysqli_query($con, "select * from contact ORDER BY contact DESC LIMIT {$mesPag['limit']} OFFSET {$mesPag['offset']}");
                                     while ($row = mysqli_fetch_array($result)){
                                     ?>
                                     <tr>
@@ -532,6 +623,7 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                                 </tbody>
                             </table>
                         </div>
+                        <?php echo hms_render_pagination($mesPag['page'], $mesPag['totalPages'], "list-mes"); ?>
                     </div>
                 </div>
 
@@ -540,15 +632,15 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                         <div class="card-header bg-white py-4">
                             <h4 class="mb-0 font-weight-bold text-primary">Security: Account Reset</h4>
                         </div>
-                        <div class="card-body p-5">
+                        <div class="card-body p-3 p-md-5">
                             <form method="post" action="admin-dashboard.php">
                                 <?php echo hms_csrf_field(); ?>
                                 <div class="row">
-                                    <div class="col-md-6 mb-4">
+                                    <div class="col-md-6 mb-3">
                                         <label>Patient Email Address</label>
                                         <input type="email" class="form-control" name="patient_email" required>
                                     </div>
-                                    <div class="col-md-6 mb-4">
+                                    <div class="col-md-6 mb-3">
                                         <label>New Temporary Password</label>
                                         <input type="password" class="form-control" name="new_password" required>
                                     </div>
@@ -596,7 +688,11 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php if($staffRows){ while($row = mysqli_fetch_assoc($staffRows)){ ?>
+                                        <?php 
+                                        $staffPag = hms_get_pagination_data($con, "stafftb");
+                                        $staffRows = mysqli_query($con, "SELECT * FROM stafftb ORDER BY id DESC LIMIT {$staffPag['limit']} OFFSET {$staffPag['offset']}");
+                                        if($staffRows){ while($row = mysqli_fetch_assoc($staffRows)){ 
+                                        ?>
                                         <tr>
                                             <td>#<?php echo (int)$row['id']; ?></td>
                                             <td><?php echo hms_esc($row['full_name']); ?></td>
@@ -619,14 +715,37 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                                     </tbody>
                                 </table>
                             </div>
+                            <?php echo hms_render_pagination($staffPag['page'], $staffPag['totalPages'], "list-staff"); ?>
                         </div>
                     </div>
                 </div>
 
                 <div class="tab-pane fade" id="list-lab" role="tabpanel">
                     <div class="card shadow-sm border-0">
-                        <div class="card-header bg-white py-4">
+                        <div class="card-header bg-white py-4 d-flex justify-content-between align-items-center">
                             <h4 class="mb-0 font-weight-bold text-primary">Lab Test Reports</h4>
+                            <button class="btn btn-outline-primary btn-sm rounded-pill px-3 mr-2" type="button" data-toggle="collapse" data-target="#filterLab">
+                                <i class="fa fa-filter mr-1"></i> <span>Filter</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Lab Filter Collapse -->
+                        <div class="collapse mb-4 px-4 mt-3" id="filterLab">
+                            <form method="get" action="admin-dashboard.php#list-lab" class="row align-items-end bg-light p-3 rounded shadow-sm">
+                                <div class="col-md-9 mb-2">
+                                    <label class="small font-weight-bold">Status</label>
+                                    <select name="lab_status" class="form-control form-control-sm">
+                                        <option value="">All Status</option>
+                                        <option value="ordered" <?php echo ($_GET['lab_status'] ?? '') === 'ordered' ? 'selected' : ''; ?>>Ordered</option>
+                                        <option value="sample_collected" <?php echo ($_GET['lab_status'] ?? '') === 'sample_collected' ? 'selected' : ''; ?>>Sample Collected</option>
+                                        <option value="completed" <?php echo ($_GET['lab_status'] ?? '') === 'completed' ? 'selected' : ''; ?>>Completed</option>
+                                        <option value="cancelled" <?php echo ($_GET['lab_status'] ?? '') === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <button type="submit" class="btn btn-primary btn-sm btn-block">Apply</button>
+                                </div>
+                            </form>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-modern table-hover mb-0">
@@ -636,7 +755,22 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php if($labRows){ while($row = mysqli_fetch_assoc($labRows)){ ?>
+                                    <?php 
+                                    $filters = [
+                                        'status' => $_GET['lab_status'] ?? ''
+                                    ];
+                                    $filterData = hms_build_filter_where($filters);
+                                    $labPag = hms_get_pagination_data($con, "labtesttb", $filterData['where'], $filterData['params'], $filterData['types']);
+                                    
+                                    $query = "SELECT * FROM labtesttb WHERE {$filterData['where']} ORDER BY id DESC LIMIT {$labPag['limit']} OFFSET {$labPag['offset']}";
+                                    $stmt = mysqli_prepare($con, $query);
+                                    if (!empty($filterData['params'])) {
+                                        mysqli_stmt_bind_param($stmt, $filterData['types'], ...$filterData['params']);
+                                    }
+                                    mysqli_stmt_execute($stmt);
+                                    $labRows = mysqli_stmt_get_result($stmt);
+                                    if($labRows){ while($row = mysqli_fetch_assoc($labRows)){ 
+                                    ?>
                                     <tr>
                                         <td>#<?php echo (int)$row['id']; ?></td>
                                         <td><?php echo (int)$row['pid']; ?></td>
@@ -664,6 +798,7 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
                                 </tbody>
                             </table>
                         </div>
+                        <?php echo hms_render_pagination($labPag['page'], $labPag['totalPages'], "list-lab"); ?>
                     </div>
                 </div>
             </div>
@@ -675,8 +810,34 @@ $labRows = mysqli_query($con, "SELECT * FROM labtesttb ORDER BY id DESC");
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-      // Analytics Charts
+      // Tab Persistence & Mobile UX Logic
       (function () {
+        // Tab Persistence
+        const hash = window.location.hash;
+        if (hash) {
+          $('.list-group-item[href="' + hash + '"]').tab('show');
+        }
+
+        // Mobile Search Toggle
+        document.querySelectorAll('.search-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                this.parentElement.classList.toggle('active');
+                const input = this.parentElement.querySelector('input');
+                if (this.parentElement.classList.contains('active') && input) {
+                    input.focus();
+                }
+            });
+        });
+
+        // Close search when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-mobile-wrapper')) {
+                document.querySelectorAll('.search-mobile-wrapper').forEach(w => w.classList.remove('active'));
+            }
+        });
+
+        // Analytics Charts
         var trendData = <?php echo json_encode($trend14); ?>;
         var doctorLoadRows = <?php echo json_encode($doctorLoadRows); ?>;
         var specLoadRows = <?php echo json_encode($specLoadRows); ?>;

@@ -150,17 +150,11 @@ $avgDailyBookings = count($publicTrend['bookings']) > 0 ? round($weeklyBookings 
                 <div class="col-lg-7">
                     <div class="auth-section">
                         <ul class="nav nav-tabs auth-tabs-nav nav-justified" id="myTab" role="tablist">
-                             <li class="nav-item">
-                                <a class="nav-link active" id="home-tab" data-toggle="tab" href="#home" role="tab">Patient Register</a>
+                            <li class="nav-item">
+                                <a class="nav-link active" id="home-tab" data-toggle="tab" href="#home" role="tab">Register</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" id="login-tab" data-toggle="tab" href="#login" role="tab">Patient Login</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" id="profile-tab" data-toggle="tab" href="#profile" role="tab">Doctor Portal</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" id="admin-tab" data-toggle="tab" href="#admin" role="tab">Receptionist</a>
+                                <a class="nav-link" id="login-tab" data-toggle="tab" href="#login" role="tab">Login</a>
                             </li>
                         </ul>
                         <div class="tab-content p-4 p-md-5" id="myTabContent">
@@ -223,41 +217,6 @@ $avgDailyBookings = count($publicTrend['bookings']) > 0 ? round($weeklyBookings 
                                 </form>
                             </div>
 
-                            <!-- Doctor Login -->
-                            <div class="tab-pane fade" id="profile" role="tabpanel">
-                                <h3 class="register-heading">Doctor Portal Login</h3>
-                                <form method="post" action="doctor-auth.php">
-                                    <?php echo hms_csrf_field(); ?>
-                                    <div class="form-group mb-4">
-                                        <input type="text" class="form-control" placeholder="Username *" name="username3" required/>
-                                    </div>
-                                    <div class="form-group mb-4">
-                                        <input type="password" class="form-control" placeholder="Password *" name="password3" required/>
-                                    </div>
-                                    <input type="submit" class="btnRegister" name="docsub1" value="Login to Portal"/>
-                                    <div class="text-center mt-3">
-                                        <a href="forgot-password.php" class="text-muted small">Forgot password?</a>
-                                    </div>
-                                </form>
-                            </div>
-
-                            <!-- Admin Login -->
-                            <div class="tab-pane fade" id="admin" role="tabpanel">
-                                <h3 class="register-heading">Staff Login</h3>
-                                <form method="post" action="admin-auth.php">
-                                    <?php echo hms_csrf_field(); ?>
-                                    <div class="form-group mb-4">
-                                        <input type="text" class="form-control" placeholder="Admin Username *" name="username1" required/>
-                                    </div>
-                                    <div class="form-group mb-4">
-                                        <input type="password" class="form-control" placeholder="Password *" name="password2" required/>
-                                    </div>
-                                    <input type="submit" class="btnRegister" name="adsub" value="Access Dashboard"/>
-                                    <div class="text-center mt-3">
-                                        <a href="forgot-password.php" class="text-muted small">Forgot password?</a>
-                                    </div>
-                                </form>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -355,7 +314,7 @@ $avgDailyBookings = count($publicTrend['bookings']) > 0 ? round($weeklyBookings 
         document.addEventListener('DOMContentLoaded', function() {
             // Handle external links to specific tabs
             var hash = window.location.hash;
-            if (hash === '#login' || hash === '#profile' || hash === '#admin') {
+            if (hash === '#login') {
                 $('.auth-tabs-nav a[href="' + hash + '"]').tab('show');
             }
 
